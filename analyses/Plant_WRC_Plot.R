@@ -4,7 +4,7 @@
 ################################################################################
 #                                                                              #
 #	Written by: Ariane Peralta (2016/05/13)                                      #
-# Modified by:                                                                 #
+# Modified by:  Mario Muscarella(2016/07/27)                                   #
 #                                                                              #
 #                                                                              #
 ################################################################################
@@ -13,7 +13,7 @@
 
 # Setup Work Environment
 rm(list=ls())
-setwd("~/GitHub/IL_Wetlands")
+setwd("~/GitHub/WRC_FertMowing")
 #setwd("~/Dropbox/WRC_Project_Writing/Manuscript_WRC_Plant_Ecology")
 opar <- par(no.readonly = TRUE)  # Saves plot defaults
 
@@ -35,7 +35,7 @@ require("grid")
 
 
 # Import Data
-PCC <- read.csv ("./WRC_Importance_final.csv", header=TRUE)
+PCC <- read.csv ("./data/WRC_Importance_final.csv", header=TRUE)
 labels(PCC)
 #soil <- read.csv("~/Dropbox/WRC_Project_Writing/Manuscript_WRC_Plant_Ecology/data_original/WRC_Soil_Data.csv", header=TRUE)
 #labels(soil)
