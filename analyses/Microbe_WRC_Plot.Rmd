@@ -23,7 +23,8 @@ ci <- function(x, ...){1.96 * sd(x,na.rm = TRUE)}
 source("../bin/MothurTools.R")
 require("vegan")
 require("reshape")
-
+require("png")
+require("grid")
 ```
 
 ## Experimental Design
@@ -102,15 +103,26 @@ cent.dataframe <- t(data.frame(rbind(centroids[1,-1], centroids[2,-1],
 colnames(cent.dataframe) <- c("V1", "V2", "V1e", "V2e")
 cent.treats <- rownames(cent.dataframe)
 
-myColors <- c("#FFF000", "#CCFF00", "#33CC33", "#000000", "#336633", "#FF9933", "blue", "red", "purple", "gray") #pick new
-names(myColors) <- levels(cent.treats)
-colScale <- scale_colour_manual(values = myColors)
+pch.col <- c("gray90", "gray90", "gray90", "gray90", "gray90", 
+              "forestgreen", "forestgreen", "forestgreen", 
+              "forestgreen", "forestgreen")
+bg.col <- c("gray10", "gray10", "gray10", "gray10", "gray10",
+            "gray10", "gray10", "gray10", "gray10", "gray10")
+
+pch.loc <- c(22, 24, 22, 24, 21, 22, 24, 22, 25, 21)
+
+# then label AV or EC
+# since plant doesn’t seem to mean as much (??)
 
 # Define Plot Parameters
+png(filename="../figures/Microbe_PCoA.png",
+      width = 1200, height = 800, res = 96*2, bg = "white")
+par(opar)
+layout(matrix(1:2, 1), widths = c(5, 2))
 par(mar = c(5, 5.5, 1, 1) + 0.1)
 
 plot(cent.dataframe[,1], cent.dataframe[,2], type = 'n', las = 1,
-     xlim = c(-0.25, 0.4), ylim = c(-0.3, 0.2),
+     xlim = c(-0.25, 0.25), ylim = c(-0.3, 0.2),
      xaxt = "n", xlab = "", yaxt = "n", ylab="")
 arrows(x0 = cent.dataframe[,1], 
        y1 = cent.dataframe[,2] - cent.dataframe[,4], 
@@ -123,10 +135,7 @@ arrows(y0 = cent.dataframe[,2],
        angle = 90,
        length=0.05, lwd = 2, code = 3)
 points(cent.dataframe[,1], cent.dataframe[,2], 
-       cex = 2.5, col = myColors, pch = 15)
-legend("topright", legend = cent.treats, col = myColors, 
-       pch = 15, cex = 0.75, bty = 'n', inset = c(0.1, 0.05),
-       y.intersp = 1.25)
+       cex = 2.5, bg = pch.col, col = bg.col, pch = pch.loc, lwd = 2)
 
 axis(side = 1, labels = T, las = 1, lwd.ticks = 2)
 axis(side = 2, labels = T, las = 1, lwd.ticks = 2)
@@ -146,6 +155,20 @@ mtext(paste("PCoA 1 (", explainvar1, "%)", sep = ""), side = 1, line = 3, cex = 
 mtext(paste("PCoA 2 (", explainvar2, "%)", sep = ""), side = 2, line = 3.5, cex = 1.5)
       
 box(lwd = 2)
+par(mar = c(5, 0, 1, 1) + 0.1)
+plot.new()
+
+legend(0, 1, legend = cent.treats, col = "gray10", pt.bg = pch.col,
+       pch = pch.loc, cex = 0.75, bty = 'n', # inset = c(0.1, 0.05),
+       y.intersp = 1.5, pt.lwd = 1)
+
+# then label AV or EC
+
+dev.off() # this writes plot to folder
+graphics.off() # shuts down open devices
+
+img <- readPNG("../figures/Microbe_PCoA.png")
+grid.raster(img)
 ```
 
 
