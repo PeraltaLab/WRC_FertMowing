@@ -158,17 +158,29 @@ box(lwd = 2)
 par(mar = c(5, 0, 1, 1) + 0.1)
 plot.new()
 
-legend(0, 1, legend = cent.treats, col = "gray10", pt.bg = pch.col,
-       pch = pch.loc, cex = 0.75, bty = 'n', # inset = c(0.1, 0.05),
+legend(0, 1, legend = c("Bulk", "Rhizosphere", "Rhizoplane"),
+       col = "gray10", pt.bg = c("white", "white", "white"), 
+       pch = c(21, 24, 22), cex = 0.75, bty = 'n',
        y.intersp = 1.5, pt.lwd = 1)
 
-# then label AV or EC
+legend(0, 0.6, legend = c("Fertilized", "Unfertilized"),
+       col = "gray10", pt.bg = c("forestgreen", "gray90"), 
+       pch = c(22, 22), cex = 0.75, bty = 'n',
+       y.intersp = 1.5, pt.lwd = 1)
 
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
 
 img <- readPNG("../figures/Microbe_PCoA.png")
 grid.raster(img)
+```
+
+## PerMANOVA
+```{r}
+adonis(WRC.bac.REL ~ Treatment + Plant + Location, data = design, perm = 999)
+
+
+
 ```
 
 
