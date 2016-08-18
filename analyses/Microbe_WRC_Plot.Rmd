@@ -76,8 +76,8 @@ WRC.bac.pcoa <- cmdscale(WRC.bac.REL.dist, k=3, eig=TRUE, add=FALSE)
   # Classical (Metric) Multidimensional Scaling; returns PCoA coordinates
   # eig=TRUE returns eigenvalues; k = # of dimensions to calculate
 
-explainvar1 <- round(WRC.bac.pcoa$eig[1] / sum(WRC.bac.pcoa$eig), 3) * 100
-explainvar2 <- round(WRC.bac.pcoa$eig[2] / sum(WRC.bac.pcoa$eig), 3) * 100
+explainvar1 <- round(WRC.bac.pcoa$eig[1] / sum(WRC.bac.pcoa$eig), 2) * 100
+explainvar2 <- round(WRC.bac.pcoa$eig[2] / sum(WRC.bac.pcoa$eig), 2) * 100
 sum.eig <- sum(explainvar1, explainvar2)
 
 
@@ -115,8 +115,10 @@ pch.loc <- c(22, 24, 22, 24, 21, 22, 24, 22, 25, 21)
 # since plant doesn’t seem to mean as much (??)
 
 # Define Plot Parameters
-png(filename="../figures/Microbe_PCoA.png",
-      width = 1200, height = 800, res = 96*2, bg = "white")
+#png(filename="../figures/Microbe_PCoA.png",
+#      width = 1200, height = 800, res = 96*2, bg = "white")
+pdf(file="../figures/Microbe_PCoA.pdf",
+      width = 6, height = 4, bg = "white")
 par(opar)
 layout(matrix(1:2, 1), widths = c(5, 2))
 par(mar = c(5, 5.5, 1, 1) + 0.1)
@@ -171,13 +173,13 @@ legend(0, 0.6, legend = c("Fertilized", "Unfertilized"),
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
 
-img <- readPNG("../figures/Microbe_PCoA.png")
-grid.raster(img)
+#img <- readPNG("../figures/Microbe_PCoA.png")
+#grid.raster(img)
 ```
 
 ## PerMANOVA
 ```{r}
-adonis(WRC.bac.REL ~ Treatment + Plant + Location, data = design, perm = 999)
+adonis(WRC.bac.REL ~ Treatment + Plant + Location, data = design, strata = design$Treatment, perm = 999)
 
 
 
