@@ -89,9 +89,9 @@ levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
 
 sampleREL.dist <- vegdist(decostand((PCC[,-c(1:9)]),method="log"),method="bray")
 WRC_pcoa <- cmdscale(sampleREL.dist,k=3,eig=TRUE,add=FALSE)
-explainvar1 <- round(WRC_pcoa$eig[1]/sum(WRC_pcoa$eig)*100,2)
-explainvar2 <- round(WRC_pcoa$eig[2]/sum(WRC_pcoa$eig)*100,2)
-explainvar3 <- round(WRC_pcoa$eig[3]/sum(WRC_pcoa$eig)*100,2)
+explainvar1 <- round(WRC_pcoa$eig[1]/sum(WRC_pcoa$eig)*100,1)
+explainvar2 <- round(WRC_pcoa$eig[2]/sum(WRC_pcoa$eig)*100,1)
+explainvar3 <- round(WRC_pcoa$eig[3]/sum(WRC_pcoa$eig)*100,1)
 explainvar1
 explainvar2
 explainvar3
@@ -116,8 +116,13 @@ cex.yr <- 1.2 + (as.numeric(unique(centroids$year)) - 2000) * 0.1
 ------------------------------------------------------------------------
 ####  
   
-png(filename="./figures/Plant_PCoA.png",
-      width = 1800, height = 600, res = 96*2, bg = "white")
+#png(filename="./figures/Plant_PCoA.png",
+#      width = 1800, height = 600, res = 96*2, bg = "white")
+
+pdf(file="./figures/Plant_PCoA.pdf",
+    width = 9, height = 3, bg = "white")
+
+
 par(opar)
 layout(matrix(1:4, 1))
   
@@ -158,8 +163,8 @@ text(centroids[which(centroids$treatments == "UM/UF"), ]$V1_mean,
        centroids[which(centroids$treatments == "UM/UF"), ]$V2_se, 
      labels=centroids[which(centroids$treatments == "UM/UF"), ]$year, 
      pos=3, cex = 0.6, srt = 45, offset = 0.75)
-rect(-0.13, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(-0.13, 0.165, "Unmowed/Unfertilized", adj = 0)
+rect(-0.15, 0.14, 0.22, 0.185, col = "white", border = NA)
+text(-0.15, 0.165, "Unmowed/Unfertilized", adj = 0)
 
 
 plot(pcoap$V1, pcoap$V2, xlab="", 
@@ -226,8 +231,8 @@ text(centroids[which(centroids$treatments == "M/UF"), ]$V1_mean,
       centroids[which(centroids$treatments == "M/UF"), ]$V2_se, 
     labels=centroids[which(centroids$treatments == "M/UF"), ]$year, 
     pos=3, cex = 0.6, srt = 45, offset = 0.75)
-rect(-0.13, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(-0.13, 0.165, "Mowed/Unfertilized", adj = 0)
+rect(-0.12, 0.14, 0.22, 0.185, col = "white", border = NA)
+text(-0.12, 0.165, "Mowed/Unfertilized", adj = 0)
            
 
 
@@ -260,8 +265,8 @@ text(centroids[which(centroids$treatments == "M/F"), ]$V1_mean,
       centroids[which(centroids$treatments == "M/F"), ]$V2_se, 
     labels=centroids[which(centroids$treatments == "M/F"), ]$year, 
     pos=3, cex = 0.6, srt = 45, offset = 0.75)
-rect(-0.13, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(-0.13, 0.165, "Mowed/Fertilized", adj = 0)
+rect(-0.10, 0.14, 0.22, 0.185, col = "white", border = NA)
+text(-0.10, 0.165, "Mowed/Fertilized", adj = 0)
            
 
 
@@ -275,14 +280,14 @@ mtext(paste("PCoA Axis 2 (",explainvar2, "%)", sep=""), side = 2,
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
 
-img <- readPNG("./figures/Plant_PCoA.png")
-grid.raster(img)
+# img <- readPNG("./figures/Plant_PCoA.png")
+# grid.raster(img)
 
 
 #####
 
 
-ordiellipse(cbind(pcoap$V1, pcoap$V2), pcoap$y, kind="se", conf=0.95, lwd=2, draw = "polygon", col="gray", border = "black", label=TRUE, cex=2)
-levels(treatments) <- c("UM/UF", "UM/F", "m/UF", "MF")
-myColors <- c("#FFF000", "#CCFF00", "#33CC33", "#339933")
-names(myColors) <- levels(treatments)
+# ordiellipse(cbind(pcoap$V1, pcoap$V2), pcoap$y, kind="se", conf=0.95, lwd=2, draw = "polygon", col="gray", border = "black", label=TRUE, cex=2)
+# levels(treatments) <- c("UM/UF", "UM/F", "m/UF", "MF")
+# myColors <- c("#FFF000", "#CCFF00", "#33CC33", "#339933")
+# names(myColors) <- levels(treatments)
