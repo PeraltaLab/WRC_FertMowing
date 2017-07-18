@@ -48,19 +48,20 @@ levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
 # Simple Hypothesis Testing
 ###########################
 
-# adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year, method = "bray", data = PCC, perm=1000)
-# adonis
-# 
-# adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year, strata = PCC$BLOCK, method = "bray", data = PCC, perm=1000)
-# adonis
-# 
-# adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
-# adonis2
-# #adonis1 and adonis2 models were the same
-# 
-# WL.simper <- simper(PCC[,-c(1:9)], group = PCC$treatment)
-# simper <- summary(WL.simper)
-# simper
+#incorporating strata to restrict permutation within like treatments only (?? - double check with McCoy)
+adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000)
+adonis
+
+adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
+adonis2
+
+
+str(PCC)
+WL.simper <- simper(PCC[,-c(1:9)], group = PCC$Fertilizer
+simper <- summary(WL.simper)
+simper
+
+#SIMPER is somewhat frowned upon - Warton et al. 2012 - so trying to sort out which anlaysis to run to ask "Which plant species are responsible for group differences?")
 
 #adonis(formula = PCC[, -c(1:9)] ~ Fertilizer * Mowing * Year,      data = PCC, permutations = 1000, method = "bray") 
 
