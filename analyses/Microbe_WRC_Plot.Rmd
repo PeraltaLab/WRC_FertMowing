@@ -42,8 +42,7 @@ WRC.bac.in <- read.delim("../data/WRC2015_Rhizosphere_Classified_genus_OTUs.txt"
                          row.names = 1)
 
 WRC.bac.in2 <- WRC.bac.in[,-1]
-WRC.bac.in2[1:5, 1:5]
-
+x <- WRC.bac.in2[1:5, 1:5] #just a test
 
 # Remove OTUs with less than two occurences across all sites
 WRC.bac <- WRC.bac.in2[, which(colSums(WRC.bac.in2) >= 2)]
@@ -56,9 +55,13 @@ WRC.bac.REL <- WRC.bac
 for(i in 1:dim(WRC.bac)[1]){
   WRC.bac.REL[i,] <- WRC.bac[i,]/sum(WRC.bac[i,])
 }
+y <- WRC.bac.REL[1:5, 1:5] #just a test
+y
 
-# Log Transform Relative Abundances
-WRC.bac.REL.log <- decostand(WRC.bac.REL, method="log")
+# Alternative Function for Calculating Relative Abundances
+WRC.bac.REL.log <- decostand(WRC.bac, method="total")
+z <- WRC.bac.REL.log[1:5, 1:5] #just a test
+z
 
 # Import Taxonomy File
 WRC.tax <- read.tax(taxonomy = 
@@ -84,7 +87,7 @@ sum.eig <- sum(explainvar1, explainvar2)
 
 ```
 
-## PCoA Plot
+## PCoA Plot - plot function (ggplot2 version below)
 ```{r, results=hide}
 # Define Centroids and Error Bars
 if(all.equal(row.names(WRC.bac.pcoa$points), as.character(design$SampleID))){
@@ -177,6 +180,37 @@ graphics.off() # shuts down open devices
 #grid.raster(img)
 ```
 
+# Plot (ggplot) - AP will update
+```{r}
+df1a <- as.data.frame(pcoa.cent.dataframe)
+plot1a <- ggplot(df1a, aes(x=V1, y=V2, colour=pcoa.col, shape = pcoa.shape,
+                 group = interaction(pcoa.col, pcoa.shape))) + theme_bw() 
+plot1a + theme(panel.grid.major = element_blank(), 
+               panel.grid.minor = element_blank(), 
+               axis.line = element_line(colour = "black")) + 
+theme(panel.background = element_blank()) + 
+  geom_point(aes(fill=pcoa.col), colour = "black", size=6, stroke = 0.75) + 
+  geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0.01), colour="black") +    
+  geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0.01), colour="black") + 
+  scale_colour_manual(labels = c("0","5","9","13"), 
+                      values = c("#FFFFFF", "#00FFFF", "#33CCCC", "#0066CC")) + 
+  scale_fill_manual(labels = c("0","5","9","13"), 
+                    values = c("#FFFFFF", "#00FFFF", "#33CCCC", "#0066CC")) + 
+  scale_shape_manual(labels = c("0","18","45"),
+                     values = c(22, 21, 24)) +
+  coord_cartesian(xlim = c(-0.25, 0.5), ylim = c(-0.35, 0.3)) + 
+  theme(axis.title = element_text(size=18), axis.text=element_text(size=14), 
+          axis.text.x = element_text(size=14), 
+          panel.border = element_rect(colour = "black", size=1.25)) + 
+  theme(axis.ticks.length=unit(0.3,"cm")) + 
+  xlab("PCoA 1 (21.7%)") + ylab("PCoA 2 (6.6%)") + 
+  labs(fill = "Salinity", shape = "Date") +
+  guides(fill = guide_legend(override.aes = list(pch=21, size = 4, colour="black")),
+         shape = guide_legend(override.aes = list(size = 4, fill="black")))
+
+ggsave("16SrRNA_CSI_Rplot_SalinityDispersal.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=900, limitsize=TRUE)
+
+```
 ## PerMANOVA
 ```{r}
 adonis(WRC.bac.REL ~ Treatment + Plant + Location, data = design, strata = design$Treatment, perm = 999)
