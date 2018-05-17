@@ -36,7 +36,8 @@ require("grid")
 
 # Import Data
 ```{r}
-PCC <- read.csv("../data/WRC_Importance_final.csv", header=TRUE)
+PCC <- read.csv("../data/WRC_Importance.csv", header=TRUE)
+#PCC <- read.csv("../data/WRC_Importance_final.csv", header=TRUE)
 labels(PCC)
 
 treatments <- PCC$treatment
@@ -46,29 +47,23 @@ levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
 # Simple Hypothesis Testing
 ```{r}
 #incorporating strata to restrict permutation within similar treatment
-adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000)
+PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray", na.rm=TRUE)
+
+adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000, na.rm=TRUE)
 adonis
 
-adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
+adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000, na.rm=TRUE)
 adonis2
 
 
-str(PCC)
-WL.simper <- simper(PCC[,-c(1:9)], group = PCC$Fertilizer)
-simper <- summary(WL.simper)
-simper
-
-WL.simper <- simper(PCC[,-c(1:9)], group = PCC$Mowing)
-simper <- summary(WL.simper)
-simper
-#SIMPER is somewhat frowned upon - Warton et al. 2012 - so trying to sort out which anlaysis to run to ask "Which plant species are responsible for group differences?")
+###Insert Indicator Spp Analysis code here
 
 ```
 
 # Plot Plant Community Composition
 # not working starting at lines 94 and then 112
 ```{r}
-sampleREL.dist <- vegdist(decostand((PCC[,-c(1:9)]),method="log"),method="bray")
+sampleREL.dist <- vegdist(PCC[,-c(1:9)], method="bray", na.rm=TRUE)
 WRC_pcoa <- cmdscale(sampleREL.dist,k=3,eig=TRUE,add=FALSE)
 explainvar1 <- round(WRC_pcoa$eig[1]/sum(WRC_pcoa$eig)*100,1)
 explainvar2 <- round(WRC_pcoa$eig[2]/sum(WRC_pcoa$eig)*100,1)
