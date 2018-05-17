@@ -37,7 +37,6 @@ require("grid")
 # Import Data
 ```{r}
 PCC <- read.csv("../data/WRC_Importance.csv", header=TRUE)
-#PCC <- read.csv("../data/WRC_Importance_final.csv", header=TRUE)
 labels(PCC)
 
 treatments <- PCC$treatment
@@ -47,12 +46,12 @@ levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
 # Simple Hypothesis Testing
 ```{r}
 #incorporating strata to restrict permutation within similar treatment
-PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray", na.rm=TRUE)
+PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray")
 
 adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000, na.rm=TRUE)
 adonis
 
-adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000, na.rm=TRUE)
+adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
 adonis2
 
 
@@ -63,7 +62,7 @@ adonis2
 # Plot Plant Community Composition
 # not working starting at lines 94 and then 112
 ```{r}
-sampleREL.dist <- vegdist(PCC[,-c(1:9)], method="bray", na.rm=TRUE)
+sampleREL.dist <- vegdist(PCC[,-c(1:9)], method="bray")
 WRC_pcoa <- cmdscale(sampleREL.dist,k=3,eig=TRUE,add=FALSE)
 explainvar1 <- round(WRC_pcoa$eig[1]/sum(WRC_pcoa$eig)*100,1)
 explainvar2 <- round(WRC_pcoa$eig[2]/sum(WRC_pcoa$eig)*100,1)
@@ -85,8 +84,7 @@ centroids <- cast(L.centroids, ... ~ variable, fun.aggregate=c(mean,se))
 
 cex.yr <- 1.2 + (as.numeric(unique(centroids$year)) - 2000) * 0.1
 
-
-pdf(file="./figures/Plant_PCoA_v2.pdf", width = 9, height = 3, bg = "white")
+pdf(file="../figures/Plant_PCoA.pdf", width = 9, height = 3, bg = "white")
 #ggsave("../figures/Plant_Rplot.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=300, limitsize=TRUE)
 
 par(opar)
@@ -130,7 +128,7 @@ text(centroids[which(centroids$treatments == "UM/UF"), ]$V1_mean,
      labels=centroids[which(centroids$treatments == "UM/UF"), ]$year, 
      pos=3, cex = 0.6, srt = 45, offset = 0.75)
 rect(-0.15, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(-0.15, 0.165, "Unmowed/Unfertilized", adj = 0)
+text(0, -0.3, "Unmowed/Unfertilized", adj = 0)
 
 
 plot(pcoap$V1, pcoap$V2, xlab="", 
@@ -163,7 +161,7 @@ text(centroids[which(centroids$treatments == "UM/F"), ]$V1_mean,
     labels=centroids[which(centroids$treatments == "UM/F"), ]$year, 
     pos=3, cex = 0.6, srt = 45, offset = 0.75)
 rect(-0.13, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(-0.13, 0.165, "Unmowed/Fertilized", adj = 0)
+text(0, -0.3, "Unmowed/Fertilized", adj = 0)
 
 
 plot(pcoap$V1, pcoap$V2, xlab="", 
@@ -196,7 +194,7 @@ text(centroids[which(centroids$treatments == "M/UF"), ]$V1_mean,
     labels=centroids[which(centroids$treatments == "M/UF"), ]$year, 
     pos=3, cex = 0.6, srt = 45, offset = 0.75)
 rect(-0.12, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(-0.12, 0.165, "Mowed/Unfertilized", adj = 0)
+text(0, -0.3, "Mowed/Unfertilized", adj = 0)
            
 plot(pcoap$V1, pcoap$V2, xlab="", 
     ylab="", 
@@ -228,7 +226,7 @@ text(centroids[which(centroids$treatments == "M/F"), ]$V1_mean,
     labels=centroids[which(centroids$treatments == "M/F"), ]$year, 
     pos=3, cex = 0.6, srt = 45, offset = 0.75)
 rect(-0.10, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(-0.10, 0.165, "Mowed/Fertilized", adj = 0)
+text(0, -0.3, "  Mowed/Fertilized", adj = 0)
            
 mtext(paste("PCoA Axis 1 (",explainvar1, "%)", sep=""), side = 1, 
       line = 2.5, outer = T, cex = 1.25)
