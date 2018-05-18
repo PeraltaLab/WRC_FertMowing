@@ -1,0 +1,241 @@
+---
+title: "Long-term Fertilization and Mowing at WRC:  Plant Community Characterization"
+author: "Ariane L. Peralta, Mario E. Muscarella, ...."
+date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{array}
+  - \usepackage{graphics}
+output: 
+  pdf_document:
+  fig_caption: true
+---
+
+Project Description: 
+
+## Initial Setup
+```{r}
+rm(list=ls())
+setwd("~/GitHub/WRC_FertMowing/analyses")
+opar <- par(no.readonly = TRUE)  # Saves plot defaults
+
+# Add Summary Functions
+se <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+ci <- function(x, ...){1.96 * sd(x,na.rm = TRUE)}
+
+# Code Dependencies
+library(MASS)
+library(nlme)
+library(reshape2)
+library(vegan)
+library(reshape)
+library(lme4)
+library(ggplot2)
+require("png")
+require("grid")
+```
+
+# Import Data
+```{r}
+PCC <- read.csv("../data/WRC_Importance.csv", header=TRUE)
+labels(PCC)
+
+treatments <- PCC$treatment
+levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
+```
+
+# Simple Hypothesis Testing
+```{r}
+#incorporating strata to restrict permutation within similar treatment
+PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray")
+
+adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000, na.rm=TRUE)
+adonis
+
+adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
+adonis2
+
+
+###Insert Indicator Spp Analysis code here
+
+```
+
+# Plot Plant Community Composition
+# not working starting at lines 94 and then 112
+```{r}
+sampleREL.dist <- vegdist(PCC[,-c(1:9)], method="bray")
+WRC_pcoa <- cmdscale(sampleREL.dist,k=3,eig=TRUE,add=FALSE)
+explainvar1 <- round(WRC_pcoa$eig[1]/sum(WRC_pcoa$eig)*100,1)
+explainvar2 <- round(WRC_pcoa$eig[2]/sum(WRC_pcoa$eig)*100,1)
+explainvar3 <- round(WRC_pcoa$eig[3]/sum(WRC_pcoa$eig)*100,1)
+explainvar1
+explainvar2
+explainvar3
+pcoap <- merge(as.data.frame(WRC_pcoa$points),PCC$treatment, by=0,all.x=T)
+rownames(pcoap) <- rownames(WRC_pcoa$points)
+pcoap <- merge(pcoap[,-1],PCC$Year, by=0,all.x=T)
+rownames(pcoap) <- rownames(WRC_pcoa$points)
+treatments <- PCC$treatment
+year <- PCC$Year
+levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
+points <- cbind(as.data.frame(WRC_pcoa$points), treatments, year)
+L.centroids <- melt(points, id=c("treatments", "year"), measure.vars = c("V1", "V2", "V3"))
+centroids <- cast(L.centroids, ... ~ variable, mean)
+centroids <- cast(L.centroids, ... ~ variable, fun.aggregate=c(mean,se))
+
+cex.yr <- 1.2 + (as.numeric(unique(centroids$year)) - 2000) * 0.1
+
+pdf(file="../figures/Plant_PCoA.pdf", width = 9, height = 3, bg = "white")
+#ggsave("../figures/Plant_Rplot.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=300, limitsize=TRUE)
+
+par(opar)
+layout(matrix(1:4, 1))
+  
+par(mar=c(0.5,1,1,0.5), oma=c(5,5,1,1)+0.1)
+x.dim <- c((min(centroids$V1_mean)-(max(centroids$V1_mean)*0.15)) ,
+           (max(centroids$V1_mean)+(max(centroids$V1_mean)*0.15)))
+
+y.dim <- c((min(centroids$V2_mean)-(max(centroids$V2_mean*0.15))),   
+           (max(centroids$V2_mean)+(max(centroids$V2_mean)*0.15)+0.025))
+           
+           
+plot(pcoap$V1, pcoap$V2, xlab="", 
+     ylab="", 
+     xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
+     cex.lab=1.5, cex.axis=1.2) 
+axis(side=1, labels = T, las=1, cex = 0.8)
+axis(side=2, las=1, cex = 0.8)
+abline(h=0, lty="dotted")
+abline(v=0, lty="dotted")
+box(lwd=2)
+arrows(centroids[which(centroids$treatments == "UM/UF"), ]$V1_mean, 
+       y1 = centroids[which(centroids$treatments == "UM/UF"), ]$V2_mean - 
+         centroids[which(centroids$treatments == "UM/UF"), ]$V2_se, 
+       y0 = centroids[which(centroids$treatments == "UM/UF"), ]$V2_mean + 
+         centroids[which(centroids$treatments == "UM/UF"), ]$V2_se,
+       angle = 90,length=0.05, lwd = 2, code = 3)
+arrows(centroids[which(centroids$treatments == "UM/UF"), ]$V2_mean, 
+       x1 = centroids[which(centroids$treatments == "UM/UF"), ]$V1_mean - 
+         centroids[which(centroids$treatments == "UM/UF"), ]$V1_se, 
+       x0 = centroids[which(centroids$treatments == "UM/UF"), ]$V1_mean + 
+         centroids[which(centroids$treatments == "UM/UF"), ]$V1_se,
+       angle = 90, length=0.05, lwd = 2, code = 3)
+points(centroids[which(centroids$treatments == "UM/UF"), ]$V1_mean, 
+       centroids[which(centroids$treatments == "UM/UF"), ]$V2_mean, 
+       pch=21, cex=cex.yr, col="gray10", bg="gray90")
+text(centroids[which(centroids$treatments == "UM/UF"), ]$V1_mean, 
+     centroids[which(centroids$treatments == "UM/UF"), ]$V2_mean + 
+       centroids[which(centroids$treatments == "UM/UF"), ]$V2_se, 
+     labels=centroids[which(centroids$treatments == "UM/UF"), ]$year, 
+     pos=3, cex = 0.6, srt = 45, offset = 0.75)
+rect(-0.15, 0.14, 0.22, 0.185, col = "white", border = NA)
+text(0, -0.3, "Unmowed/Unfertilized", adj = 0)
+
+
+plot(pcoap$V1, pcoap$V2, xlab="", 
+    ylab="", 
+    xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
+    cex.lab=1.5, cex.axis=1.2)
+axis(side=1, labels = T, las=1, cex = 0.8)
+axis(side=2, labels = F, las=1, cex = 0.8)
+abline(h=0, lty="dotted")
+abline(v=0, lty="dotted")
+box(lwd=2)
+arrows(centroids[which(centroids$treatments == "UM/F"), ]$V1_mean, 
+      y1 = centroids[which(centroids$treatments == "UM/F"), ]$V2_mean - 
+        centroids[which(centroids$treatments == "UM/F"), ]$V2_se, 
+      y0 = centroids[which(centroids$treatments == "UM/F"), ]$V2_mean + 
+        centroids[which(centroids$treatments == "UM/F"), ]$V2_se,
+      angle = 90,length=0.05, lwd = 2, code = 3)
+arrows(centroids[which(centroids$treatments == "UM/F"), ]$V2_mean, 
+      x1 = centroids[which(centroids$treatments == "UM/F"), ]$V1_mean - 
+        centroids[which(centroids$treatments == "UM/F"), ]$V1_se, 
+      x0 = centroids[which(centroids$treatments == "UM/F"), ]$V1_mean + 
+        centroids[which(centroids$treatments == "UM/F"), ]$V1_se,
+      angle = 90, length=0.05, lwd = 2, code = 3)
+points(centroids[which(centroids$treatments == "UM/F"), ]$V1_mean, 
+      centroids[which(centroids$treatments == "UM/F"), ]$V2_mean, 
+      pch=21, cex=cex.yr, col="gray10", bg="forestgreen")
+text(centroids[which(centroids$treatments == "UM/F"), ]$V1_mean, 
+    centroids[which(centroids$treatments == "UM/F"), ]$V2_mean + 
+      centroids[which(centroids$treatments == "UM/F"), ]$V2_se, 
+    labels=centroids[which(centroids$treatments == "UM/F"), ]$year, 
+    pos=3, cex = 0.6, srt = 45, offset = 0.75)
+rect(-0.13, 0.14, 0.22, 0.185, col = "white", border = NA)
+text(0, -0.3, "Unmowed/Fertilized", adj = 0)
+
+
+plot(pcoap$V1, pcoap$V2, xlab="", 
+    ylab="", 
+    xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
+    cex.lab=1.5, cex.axis=1.2)
+axis(side=1, labels = T, las=1, cex = 0.8)
+axis(side=2, labels = F, las=1, cex = 0.8)
+abline(h=0, lty="dotted")
+abline(v=0, lty="dotted")
+box(lwd=2)
+arrows(centroids[which(centroids$treatments == "M/UF"), ]$V1_mean, 
+      y1 = centroids[which(centroids$treatments == "M/UF"), ]$V2_mean - 
+        centroids[which(centroids$treatments == "M/UF"), ]$V2_se, 
+      y0 = centroids[which(centroids$treatments == "M/UF"), ]$V2_mean + 
+        centroids[which(centroids$treatments == "M/UF"), ]$V2_se,
+      angle = 90,length=0.05, lwd = 2, code = 3)
+arrows(centroids[which(centroids$treatments == "M/UF"), ]$V2_mean, 
+      x1 = centroids[which(centroids$treatments == "M/UF"), ]$V1_mean - 
+        centroids[which(centroids$treatments == "M/UF"), ]$V1_se, 
+      x0 = centroids[which(centroids$treatments == "M/UF"), ]$V1_mean + 
+        centroids[which(centroids$treatments == "M/UF"), ]$V1_se,
+      angle = 90, length=0.05, lwd = 2, code = 3)
+points(centroids[which(centroids$treatments == "M/UF"), ]$V1_mean, 
+      centroids[which(centroids$treatments == "M/UF"), ]$V2_mean, 
+      pch=21, cex=cex.yr, col="gray10", bg="gray90")
+text(centroids[which(centroids$treatments == "M/UF"), ]$V1_mean, 
+    centroids[which(centroids$treatments == "M/UF"), ]$V2_mean + 
+      centroids[which(centroids$treatments == "M/UF"), ]$V2_se, 
+    labels=centroids[which(centroids$treatments == "M/UF"), ]$year, 
+    pos=3, cex = 0.6, srt = 45, offset = 0.75)
+rect(-0.12, 0.14, 0.22, 0.185, col = "white", border = NA)
+text(0, -0.3, "Mowed/Unfertilized", adj = 0)
+           
+plot(pcoap$V1, pcoap$V2, xlab="", 
+    ylab="", 
+    xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
+    cex.lab=1.5, cex.axis=1.2)
+axis(side=1, las=1, cex = 0.8)
+axis(side=2, labels = F, las=1, cex = 0.8)
+abline(h=0, lty="dotted")
+abline(v=0, lty="dotted")
+box(lwd=2)
+arrows(centroids[which(centroids$treatments == "M/F"), ]$V1_mean, 
+      y1 = centroids[which(centroids$treatments == "M/F"), ]$V2_mean - 
+        centroids[which(centroids$treatments == "M/F"), ]$V2_se, 
+      y0 = centroids[which(centroids$treatments == "M/F"), ]$V2_mean + 
+        centroids[which(centroids$treatments == "M/F"), ]$V2_se,
+      angle = 90,length=0.05, lwd = 2, code = 3)
+arrows(centroids[which(centroids$treatments == "M/F"), ]$V2_mean, 
+      x1 = centroids[which(centroids$treatments == "M/F"), ]$V1_mean - 
+        centroids[which(centroids$treatments == "M/F"), ]$V1_se, 
+      x0 = centroids[which(centroids$treatments == "M/F"), ]$V1_mean + 
+        centroids[which(centroids$treatments == "M/F"), ]$V1_se,
+      angle = 90, length=0.05, lwd = 2, code = 3)
+points(centroids[which(centroids$treatments == "M/F"), ]$V1_mean, 
+      centroids[which(centroids$treatments == "M/F"), ]$V2_mean, 
+      pch=21, cex=cex.yr, col="gray10", bg="forestgreen")
+text(centroids[which(centroids$treatments == "M/F"), ]$V1_mean, 
+    centroids[which(centroids$treatments == "M/F"), ]$V2_mean + 
+      centroids[which(centroids$treatments == "M/F"), ]$V2_se, 
+    labels=centroids[which(centroids$treatments == "M/F"), ]$year, 
+    pos=3, cex = 0.6, srt = 45, offset = 0.75)
+rect(-0.10, 0.14, 0.22, 0.185, col = "white", border = NA)
+text(0, -0.3, "  Mowed/Fertilized", adj = 0)
+           
+mtext(paste("PCoA Axis 1 (",explainvar1, "%)", sep=""), side = 1, 
+      line = 2.5, outer = T, cex = 1.25)
+      
+mtext(paste("PCoA Axis 2 (",explainvar2, "%)", sep=""), side = 2, 
+      line = 2.5, outer = T, cex = 1.25)
+
+dev.off() # this writes plot to folder
+graphics.off() # shuts down open devices
+
+
+```
