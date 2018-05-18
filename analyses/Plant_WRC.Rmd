@@ -95,7 +95,7 @@ x.dim <- c((min(centroids$V1_mean)-(max(centroids$V1_mean)*0.15)) ,
            (max(centroids$V1_mean)+(max(centroids$V1_mean)*0.15)))
 
 y.dim <- c((min(centroids$V2_mean)-(max(centroids$V2_mean*0.15))),   
-           (max(centroids$V2_mean)+(max(centroids$V2_mean)*0.15)+0.025))
+           (max(centroids$V2_mean)+(max(centroids$V2_mean)*0.15)+0.05))
            
            
 plot(pcoap$V1, pcoap$V2, xlab="", 
@@ -127,8 +127,7 @@ text(centroids[which(centroids$treatments == "UM/UF"), ]$V1_mean,
        centroids[which(centroids$treatments == "UM/UF"), ]$V2_se, 
      labels=centroids[which(centroids$treatments == "UM/UF"), ]$year, 
      pos=3, cex = 0.6, srt = 45, offset = 0.75)
-rect(-0.15, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(0, -0.3, "Unmowed/Unfertilized", adj = 0)
+text(0.375, -0.275, "Unmowed\nUnfertilized", adj = 1)
 
 
 plot(pcoap$V1, pcoap$V2, xlab="", 
@@ -160,8 +159,7 @@ text(centroids[which(centroids$treatments == "UM/F"), ]$V1_mean,
       centroids[which(centroids$treatments == "UM/F"), ]$V2_se, 
     labels=centroids[which(centroids$treatments == "UM/F"), ]$year, 
     pos=3, cex = 0.6, srt = 45, offset = 0.75)
-rect(-0.13, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(0, -0.3, "Unmowed/Fertilized", adj = 0)
+text(0.375, -0.275, "Unmowed\nFertilized", adj = 1)
 
 
 plot(pcoap$V1, pcoap$V2, xlab="", 
@@ -193,8 +191,7 @@ text(centroids[which(centroids$treatments == "M/UF"), ]$V1_mean,
       centroids[which(centroids$treatments == "M/UF"), ]$V2_se, 
     labels=centroids[which(centroids$treatments == "M/UF"), ]$year, 
     pos=3, cex = 0.6, srt = 45, offset = 0.75)
-rect(-0.12, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(0, -0.3, "Mowed/Unfertilized", adj = 0)
+text(0.375, -0.275, "Mowed\nUnfertilized", adj = 1)
            
 plot(pcoap$V1, pcoap$V2, xlab="", 
     ylab="", 
@@ -225,8 +222,7 @@ text(centroids[which(centroids$treatments == "M/F"), ]$V1_mean,
       centroids[which(centroids$treatments == "M/F"), ]$V2_se, 
     labels=centroids[which(centroids$treatments == "M/F"), ]$year, 
     pos=3, cex = 0.6, srt = 45, offset = 0.75)
-rect(-0.10, 0.14, 0.22, 0.185, col = "white", border = NA)
-text(0, -0.3, "  Mowed/Fertilized", adj = 0)
+text(0.375, -0.275, "  Mowed\nFertilized", adj = 1)
            
 mtext(paste("PCoA Axis 1 (",explainvar1, "%)", sep=""), side = 1, 
       line = 2.5, outer = T, cex = 1.25)
