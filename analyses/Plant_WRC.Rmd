@@ -184,6 +184,16 @@ abline(v=0, lty="dotted")
 box(lwd=2)
 trt.arrows(trt = "M/F", col.trt = "forestgreen")
 text(0.45, -0.35, "Mowed\nFertilized", adj = 1)
+
+legend("topright", c("+ Ditch Effect", "- Ditch Effect"), 
+       bty = "n", pch = c(24, 21), 
+       col = "gray10", pt.bg = "gray90", pt.cex = 1.5)
+usr <- par("usr")
+clip(0.05, 0.0905, 0.2, 0.4)
+legend("topright", c("+ Ditch Effect", "- Ditch Effect"), 
+       bty = "n", pch = c(24, 21), 
+       col = "gray10", pt.bg = "forestgreen", pt.cex = 1.5)
+do.call("clip", as.list(usr))
            
 mtext(paste("PCoA Axis 1 (",explainvar1, "%)", sep=""), side = 1, 
       line = 2.5, outer = T, cex = 1.25)
