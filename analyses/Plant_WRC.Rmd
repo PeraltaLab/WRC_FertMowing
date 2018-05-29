@@ -54,6 +54,10 @@ adonis
 adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
 adonis2
 
+#adonis1 and adonis2 result in the same output
+
+adonis3 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year*Ditch+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
+adonis3
 
 ###Insert Indicator Spp Analysis code here
 
@@ -233,5 +237,24 @@ mtext(paste("PCoA Axis 2 (",explainvar2, "%)", sep=""), side = 2,
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
 
+
+```
+# PERMANOVA with Ditch effect
+```{r}
+#incorporating strata to restrict permutation within similar treatment
+PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray")
+
+adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year*Ditch+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000, na.rm=TRUE)
+adonis
+
+#2004 only
+PCC.2004 <- subset(PCC, Year == 2004)
+adonis.2004 = adonis(PCC.2004[,-c(1:9)] ~Fertilizer*Mowing*Ditch+(1|BLOCK/QUADRAT..), method = "bray", data = PCC.2004, perm=1000)
+adonis.2004
+
+#2017 only
+PCC.2017 <- subset(PCC, Year == 2017)
+adonis.2017 = adonis(PCC.2017[,-c(1:9)] ~Fertilizer*Mowing*Ditch+(1|BLOCK/QUADRAT..), method = "bray", data = PCC.2017, perm=1000)
+adonis.2017
 
 ```
