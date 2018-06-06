@@ -87,8 +87,6 @@ L.centroids <- melt(points, id=c("treatments", "year", "ditch"), measure.vars = 
 centroids <- cast(L.centroids, ... ~ variable, mean)
 centroids <- cast(L.centroids, ... ~ variable, fun.aggregate=c(mean,se))
 
-cex.yr <- 1.2 + (as.numeric(unique(centroids$year)) - 2000) * 0.1
-
 pdf(file="../figures/Plant_PCoA.pdf", width = 9, height = 3, bg = "white")
 #ggsave("../figures/Plant_Rplot.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=300, limitsize=TRUE)
 
@@ -103,6 +101,8 @@ y.dim <- c((min(centroids$V2_mean)-(max(centroids$V2_mean*0.15))),
            (max(centroids$V2_mean)+(max(centroids$V2_mean)*0.15)+0.05))
 
 trt.arrows <- function(trt = "", col.trt = ""){
+  trt.yr <- centroids[which(centroids$treatments == trt), ]$year
+  cex.yr <- 1.2 + (as.numeric(trt.yr) - 2000) * 0.1
   arrows(centroids[which(centroids$treatments == trt), ]$V1_mean, 
          y1 = centroids[which(centroids$treatments == trt), ]$V2_mean - 
               centroids[which(centroids$treatments == trt), ]$V2_se, 
