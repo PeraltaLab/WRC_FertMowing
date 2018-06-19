@@ -13,7 +13,7 @@ output:
 Project Description: 
 
 ## Initial Setup
-```{r}
+```{r Initial Setup, include=FALSE}
 rm(list=ls())
 setwd("~/GitHub/WRC_FertMowing/analyses")
 opar <- par(no.readonly = TRUE)  # Saves plot defaults
@@ -35,37 +35,134 @@ require("grid")
 ```
 
 # Import Data
-```{r}
+```{r Import Data, include=FALSE}
 PCC <- read.csv("../data/WRC_Importance.csv", header=TRUE)
 labels(PCC)
 
 treatments <- PCC$treatment
 levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
+PCC.trts <- cbind(treatments,PCC)
 ```
 
 # Simple Hypothesis Testing
-```{r}
+```{r Hypothesis Testing PERMANOVA, echo=TRUE}
 #incorporating strata to restrict permutation within similar treatment
 PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray")
 
-adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000, na.rm=TRUE)
-adonis
+#adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000, na.rm=TRUE)
+#adonis
 
-adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
-adonis2
+#adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
+#adonis2
 
 #adonis1 and adonis2 result in the same output
 
 adonis3 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year*Ditch+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
 adonis3
+```
+# Test for multivariate homogeneity of group dispersions (variances)
+```{r Group Dispersion - DITCH, echo=TRUE}
+## Bray-Curtis distances between samples NEAR DITCH
+PCC.ditch <-subset(PCC.trts, Ditch ==1)
+PCC.dist.ditch <- vegdist(PCC.ditch[,-c(1:10)], method="bray")
 
-###Insert Indicator Spp Analysis code here
+## Calculate multivariate dispersions
+mod <- betadisper(PCC.dist.ditch, PCC.ditch$treatments)
+mod
 
+## Perform test
+anova(mod)
+
+## Permutation test for F
+permutest(mod, pairwise = TRUE)
+
+## Tukey's Honest Significant Differences
+(mod.HSD <- TukeyHSD(mod))
+plot(mod.HSD)
+
+#need to save plot
+```
+# Indicator Species Analysis
+```{r Indicator Spp Analysis - DITCH, echo=TRUE}
+#plant.ind - treatment-YES ditch
+library("labdsv")
+design.type <- PCC.ditch$treatments
+PCC.ditch.rel <- PCC.ditch[,-c(1:10)]
+dataREL <- PCC.ditch.rel[, colSums(PCC.ditch.rel) > 0.05]
+plant.ind <- indval(dataREL, design.type)
+levels(design.type)
+summary(plant.ind)
+
+inds <- which(plant.ind$pval <= 0.05)
+plant.indicators <- as.data.frame(matrix(NA, nrow = length(inds), ncol = 4))
+colnames(plant.indicators) <- c("Species", "Cluster", "IndVal", "Prob")
+
+plant.indicators$Species <- names(inds)
+plant.indicators$Cluster <- plant.ind$maxcls[inds]
+plant.indicators$IndVal <- plant.ind$indcls[inds]
+plant.indicators$Prob <- plant.ind$pval[inds]
+
+indicator.plant <- cbind(plant.indicators)
+
+levels(design.type)
+
+# Export Plant Spp Indicator Table
+write.table(indicator.plant, "../data/PlantIndicators_Ditch.txt",
+            sep="\t", row.names = F, quote = F)
+```
+# Test for multivariate homogeneity of group dispersions (variances)
+```{r Group Dispersion - NO DITCH, echo=TRUE}
+
+## Bray-Curtis distances between samples FAR/NO DITCH
+PCC.NOditch <-subset(PCC.trts, Ditch ==0)
+PCC.dist.NOditch <- vegdist(PCC.NOditch[,-c(1:10)], method="bray")
+
+## Calculate multivariate dispersions
+mod <- betadisper(PCC.dist.NOditch, PCC.NOditch$treatments)
+mod
+
+## Perform test
+anova(mod)
+
+## Permutation test for F
+permutest(mod, pairwise = TRUE)
+
+## Tukey's Honest Significant Differences
+(mod.HSD <- TukeyHSD(mod))
+plot(mod.HSD)
+##need to save plot
+```
+# Indicator Species Analysis
+```{r Indicator Spp Analysis - NO DITCH, echo=TRUE}
+#plant.ind - treatment-NO ditch
+library("labdsv")
+design.type <- PCC.NOditch$treatments
+PCC.NOditch.rel <- PCC.NOditch[,-c(1:10)]
+dataREL <- PCC.NOditch.rel[, colSums(PCC.NOditch.rel) > 0.05]
+plant.ind <- indval(dataREL, design.type)
+levels(design.type)
+summary(plant.ind)
+
+inds <- which(plant.ind$pval <= 0.05)
+plant.indicators <- as.data.frame(matrix(NA, nrow = length(inds), ncol = 4))
+colnames(plant.indicators) <- c("Species", "Cluster", "IndVal", "Prob")
+
+plant.indicators$Species <- names(inds)
+plant.indicators$Cluster <- plant.ind$maxcls[inds]
+plant.indicators$IndVal <- plant.ind$indcls[inds]
+plant.indicators$Prob <- plant.ind$pval[inds]
+
+indicator.plant <- cbind(plant.indicators)
+
+levels(design.type)
+
+# Export Plant Spp Indicator Table
+write.table(indicator.plant, "../data/PlantIndicators_NOditch.txt",
+            sep="\t", row.names = F, quote = F)
 ```
 
 # Plot Plant Community Composition
-# not working starting at lines 94 and then 112
-```{r}
+```{r Ordination - Plant, echo=TRUE}
 sampleREL.dist <- vegdist(PCC[,-c(1:9)], method="bray")
 WRC_pcoa <- cmdscale(sampleREL.dist,k=3,eig=TRUE,add=FALSE)
 explainvar1 <- round(WRC_pcoa$eig[1]/sum(WRC_pcoa$eig)*100,1)
@@ -203,25 +300,4 @@ mtext(paste("PCoA Axis 2 (",explainvar2, "%)", sep=""), side = 2,
 
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
-
-
-```
-# PERMANOVA with Ditch effect
-```{r}
-#incorporating strata to restrict permutation within similar treatment
-PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray")
-
-adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year*Ditch+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000, na.rm=TRUE)
-adonis
-
-#2004 only
-PCC.2004 <- subset(PCC, Year == 2004)
-adonis.2004 = adonis(PCC.2004[,-c(1:9)] ~Fertilizer*Mowing*Ditch+(1|BLOCK/QUADRAT..), method = "bray", data = PCC.2004, perm=1000)
-adonis.2004
-
-#2017 only
-PCC.2017 <- subset(PCC, Year == 2017)
-adonis.2017 = adonis(PCC.2017[,-c(1:9)] ~Fertilizer*Mowing*Ditch+(1|BLOCK/QUADRAT..), method = "bray", data = PCC.2017, perm=1000)
-adonis.2017
-
 ```
