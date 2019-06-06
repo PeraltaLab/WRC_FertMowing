@@ -13,7 +13,7 @@ For information regarding the project, please visit: [update with publication in
 
 ### Repo Contents
 
-* **analyses:**: An R Markdown file that includes R script written by Mike McCoy, Mario Muscarella, and Ariane Peralta containing functions used in analysis of soil and microbial sequence data.
+* **analyses:**: An R Markdown file that includes R script written by Mike McCoy, Mario Muscarella, and Ariane Peralta containing functions used in analysis of plant species data.
 
 * **data:**: Files associated with soil and plant data sets. 
 
