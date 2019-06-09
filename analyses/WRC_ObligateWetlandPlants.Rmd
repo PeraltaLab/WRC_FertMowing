@@ -156,7 +156,7 @@ p3
 ```{r}
 d=Effect("Ditch",wp4)
 dd=summary(d)
-ditcheff=data.frame(Ditch=c("Far (wet_0dtich)", "Near (dry_1ditch)"),est=c(dd$effect[1],dd$effect[2]),lwr=c(dd$lower[1], dd$lower[2]),upr=c(dd$upper[1], dd$upper[2]))
+ditcheff=data.frame(Ditch=c("wet (0ditch)", "dry (1ditch)"),est=c(dd$effect[1],dd$effect[2]),lwr=c(dd$lower[1], dd$lower[2]),upr=c(dd$upper[1], dd$upper[2]))
 
 p2=ggplot(ditcheff,aes(x=Ditch,y=est,ymin=lwr,ymax=upr,group=Ditch))+geom_segment(x=1,y=dd$effect[1],xend=2,yend=dd$effect[2],size=1)+geom_point(size=3)+theme_bw()+geom_linerange(size=.5)+theme_bw()+ylab("Importance Score")+
 theme(axis.text.x = element_text(size=18,colour = "black", hjust=0.5),

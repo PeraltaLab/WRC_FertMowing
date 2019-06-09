@@ -14,7 +14,7 @@ header-includes:
 
 Narrative for the analysis of data from a long-term ecological experiment conducted by Dr. Carol Goodwillie at ECU's West Research Campus. The experiment has monitored the change in plant communities over time. The experimental design is a 2x2 factorial experiment with 2 levels of disturbance (mowed or unmowed) and 2 levels of nutrient addition (fertilized and unfertilized). The experiment was arranged in 8 spatial blocks with each containing the 4 treatment plots. Three fixed quadrats were created within each plot that were sampled annually. The spatial blocks were arranged in two rows that differed in proximity to a ditch which is suspectected to have induced systematic differences in the hydrodynamics among the sets of blocks (see Figure 1). 
 
-![Figure1](RULE_exptdesign.jpg)
+![Figure1](~/GitHub/WRC_FertMowing/analyses/WRC_exptdesign.png)
 
 Before running statistical analyses, lets take a look at some plots of the data and makesure everything is making sense and to examine for patterns.
 
@@ -135,7 +135,7 @@ p3
 ```{r}
 d=Effect("Ditch",m1)
 dd=summary(d)
-ditcheff=data.frame(Ditch=c("Far (wet_0dtich)", "Near (dry_1ditch)"),est=c(dd$effect[1],dd$effect[2]),lwr=c(dd$lower[1], dd$lower[2]),upr=c(dd$upper[1], dd$upper[2]))
+ditcheff=data.frame(Ditch=c("wet (0ditch)", "dry (1dtich)"),est=c(dd$effect[1],dd$effect[2]),lwr=c(dd$lower[1], dd$lower[2]),upr=c(dd$upper[1], dd$upper[2]))
 
 p2=ggplot(ditcheff,aes(x=Ditch,y=est,ymin=lwr,ymax=upr,group=Ditch))+geom_segment(x=1,y=dd$effect[1],xend=2,yend=dd$effect[2],size=1)+geom_point(size=3)+theme_bw()+geom_linerange(size=.5)+theme_bw()+ylab("Species Richness")+
 theme(axis.text.x = element_text(size=18,colour = "black", hjust=0.5),
