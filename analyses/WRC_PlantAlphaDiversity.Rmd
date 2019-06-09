@@ -189,7 +189,7 @@ p1 + theme_bw() +
     theme(axis.title=element_text(vjust=1,size=14,face="bold"),
           axis.text=element_text(size=14), axis.text.x = element_text(vjust=0.65, hjust=0.5, 
           size=14), panel.border = element_rect(colour = "black",size=1)) + 
-    theme(axis.ticks.length=unit(0.3,"cm")) + labs(x = "Year", y = "Plant Biomass (g)") + 
+    theme(axis.ticks.length=unit(0.3,"cm")) + labs(x = "Year", y = "Aboveground Biomass (g)") + 
     theme(strip.text.x = element_text(size=14, face="bold"), strip.text.y =   
           element_text(size=14, face="bold"), strip.background = element_rect(colour="black",
           fill="white", size=1)) +
