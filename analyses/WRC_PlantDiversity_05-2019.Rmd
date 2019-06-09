@@ -1,0 +1,207 @@
+---
+title: "Long-term fert and mowing at WRC"
+author: "Michael W. McCoy, Ariane Peralta, and Carol Goodwillie"
+date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document: default
+  fig_caption: yes
+  pdf_document: null
+header-includes:
+- \usepackage{array}
+- \usepackage{graphics}
+- \usepackage[utf8]{inputenc}
+---
+
+Narrative for the analysis of data from a long-term ecological experiment conducted by Dr. Carol Goodwillie at ECU's West Research Campus. The experiment has monitored the change in plant communities over time. The experimental design is a 2x2 factorial experiment with 2 levels of disturbance (mowed or unmowed) and 2 levels of nutrient addition (fertilized and unfertilized). The experiment was arranged in 8 spatial blocks with each containing the 4 treatment plots. Three fixed quadrats were created within each plot that were sampled annually. The spatial blocks were arranged in two rows that differed in proximity to a ditch which is suspectected to have induced systematic differences in the hydrodynamics among the sets of blocks (see Figure 1). 
+
+![Figure1](RULE_exptdesign.jpg)
+
+Before running statistical analyses, lets take a look at some plots of the data and makesure everything is making sense and to examine for patterns.
+
+## Initial Setup
+```{r Initial Setup, include=FALSE}
+rm(list=ls())
+setwd("~/GitHub/WRC_FertMowing/analyses")
+# Code Dependencies
+library(ggplot2)
+library(glmmTMB)
+library(bbmle)
+library(broom.mixed)
+library(car)
+library(effects)
+library(aods3)
+library(gridExtra)
+```
+
+```{r first_look, echo=FALSE}
+WRC_dat.2 <- read.csv("../data/WRC_Plant_Diversity.csv")
+head(WRC_dat.2)
+WRC_dat.2$Ditch=as.factor(WRC_dat.2$Ditch)
+WRC_dat.2$Fertilizer=as.factor(WRC_dat.2$Fertilizer)
+WRC_dat.2$Mowing=as.factor(WRC_dat.2$Mowing)
+
+ggplot(WRC_dat.2,aes(x=Year,y=alpha,group=Ditch,colour=factor(Ditch)))+
+  stat_summary(fun.data=mean_cl_boot,size=1)+facet_wrap(~Fertilizer*Mowing,labeller = label_both)
+```
+
+There appears to be a clear effect of all three factors: fertilizer reduces richness, mowing reduces the effects of fertilizer and proximity to the ditch reduces overall diversity (drying effect?), possibly due to loss of obligate wetland species.
+
+We will use generalized mixed models to analyse these data.  We will account for the autocorrelation among quadrats within treatment plots by accounting for the "split plot"" nature of the design we will treat block (subplots) nested in Ditch (whole plot) as a random effect and mowing, fertilizer and ditch as a fixed effect. 
+
+The error distribution is a bit tricky for species richness becuase it is by definition a "count" of the number of species and so should be poisson or negative binomially distributed.  However, unlike other count data generated via poisson process which can contain zeros, richness data typically do not include 0 and so are bound at values > 0.  Consequently, these data are often analysed using lognormal errors becuase this bounds the values to be positive.  I will fit the data using both approaches and determine which is a better using AIC.
+
+```{r lognormal_richness}
+m1=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
+              (1|Ditch/BLOCK/QUADRAT..), data=WRC_dat.2, family=gaussian(log))
+m1=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
+              (1|BLOCK/QUADRAT..), data=WRC_dat.2, family=gaussian(log))
+m2=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
+              (1|BLOCK/QUADRAT..), data=WRC_dat.2, family=poisson(log))
+ICtab(m1,m2,type="AICc")
+c(glance(m1)[3],glance(m2)[3])
+
+```
+
+```{r}
+Anova(m1,type="II")
+
+alphae <- allEffects(m1)
+alphae
+plot(alphae)
+summary(m1)
+```
+
+```{r}
+m1_CI <- confint(m1,method="Wald")
+
+predframe=predict(m1,type="response",newdat=WRC_dat.2,se.fit=T)
+pframe=data.frame(WRC_dat.2,fit=predframe$fit,
+                  upr=predframe$fit+2*predframe$se.fit,
+                  lwr=predframe$fit-2*predframe$se.fit)
+
+int=Effect(c("Year","Mowing","Fertilizer"),m1)
+inter=summary(int)
+WRC_dat.2$chYear=as.factor(WRC_dat.2$Year)
+c(-1.5,-0.7,0.1,0.9,2)
+modterms=expand.grid(Year=c(2004,2007,2010,2013,2017),Mowing=c(0,1),Fertilizer=c(0,1))
+estimates=c(inter$effect[,,1][,1],inter$effect[,,1][,2],inter$effect[,,2][,1],inter$effect[,,2][,2])
+lwr=c(inter$lower[,,1][,1],inter$lower[,,1][,2],inter$lower[,,2][,1],inter$lower[,,2][,2])
+upr=c(inter$upper[,,1][,1],inter$upper[,,1][,2],inter$upper[,,2][,1],inter$upper[,,2][,2])
+eff=data.frame(modterms,estimates,lwr,upr)
+
+# New facet label names for variable
+fert.labs <- c("Unfertilized", "Fertilized")
+names(fert.labs) <- c("0", "1")
+mow.labs <- c("Unmowed", "Mowed")
+names(mow.labs) <- c("0", "1")
+p1=ggplot(data=eff,aes(x=Year,y=estimates,ymin=lwr,ymax=upr))+
+  geom_smooth(method="lm",color="black")+
+  facet_grid(Fertilizer~Mowing,labeller = labeller(Mowing = mow.labs, Fertilizer = fert.labs))+
+  theme_bw()+ylab("Species Richness")+
+ theme(axis.text.x = element_text(size=18,colour = "black", hjust=1,angle=45),
+        axis.title.x = element_text(size=18,face="bold")) +
+  theme(axis.text.y = element_text(size=18,colour = "black"),
+        axis.title.y = element_text(size=18,face="bold")) +
+  theme(strip.text.x = element_text(size = 18,face="bold"),strip.text.y = element_text(size = 18,face="bold"))+
+   theme(plot.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+        #panel.border = element_rect(size = 1)
+     )+ggtitle("Time x Mowing x Fertilizer Effect")
+p1
+
+p3=ggplot(data=WRC_dat.2,aes(x=Year,y=alpha,shape=Ditch, color=Ditch))+
+  stat_sum(aes(size=factor(..n..)))+
+  #geom_violin(position="identity")+
+  facet_grid(Fertilizer~Mowing,labeller = labeller(Mowing = mow.labs, Fertilizer = fert.labs))+
+   theme_bw()+ylab("Species Richness")+ theme(legend.position = "none") +
+    scale_colour_manual(labels = c("wet_0ditch","dry_1ditch"), 
+                    values = c("black", "gray")) +
+    scale_shape_manual(labels = c("wet_0ditch","dry_1ditch"), 
+                   values = c(21,17)) +
+   theme(axis.text.x = element_text(size=18,colour = "black", hjust=1,angle=45),
+        axis.title.x = element_text(size=18,face="bold")) +
+  theme(axis.text.y = element_text(size=18,colour = "black"),
+        axis.title.y = element_text(size=18,face="bold")) +
+  theme(strip.text.x = element_text(size = 18,face="bold"),strip.text.y = element_text(size = 18,face="bold"))+
+  theme(#plot.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(size = 1))+ggtitle("Raw Data")
+p3
+
+```
+
+```{r}
+d=Effect("Ditch",m1)
+dd=summary(d)
+ditcheff=data.frame(Ditch=c("Far (wet_0dtich)", "Near (dry_1ditch)"),est=c(dd$effect[1],dd$effect[2]),lwr=c(dd$lower[1], dd$lower[2]),upr=c(dd$upper[1], dd$upper[2]))
+
+p2=ggplot(ditcheff,aes(x=Ditch,y=est,ymin=lwr,ymax=upr,group=Ditch))+geom_segment(x=1,y=dd$effect[1],xend=2,yend=dd$effect[2],size=1)+geom_point(size=3)+theme_bw()+geom_linerange(size=.5)+theme_bw()+ylab("Species Richness")+
+theme(axis.text.x = element_text(size=18,colour = "black", hjust=0.5),
+        axis.title.x = element_text(size=18,face="bold")) +
+  theme(axis.text.y = element_text(size=18,colour = "black"),
+        axis.title.y = element_text(size=18,face="bold")) +
+   theme(plot.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(size = 1))+ggtitle("Ditch Effect")
+p2
+```
+# Combine graphs
+```{r combine graphs, echo=FALSE}
+#library(gridExtra)
+#suppressWarnings(grid.arrange(p1,p2,p3))
+#ggsave("../figures/All_plants.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=300, limitsize=TRUE)
+#pdf("~/Desktop/All_plants.pdf")
+#suppressWarnings(p1)
+#suppressWarnings(p2)
+#suppressWarnings(p3)
+#dev.off()
+
+library("cowplot") #combining rain cloud plots
+
+# align all plots vertically
+p3.l <-p3 + theme(legend.position="top", legend.box = "horizontal")
+plots <- align_plots(p1, p2, p3.l, align = 'v', axis = 'l')
+
+# put together bottom row and then everything
+p4 <- plot_grid(plots[[1]],plots[[2]],plots[[3]], rel_heights = c(1.1,1,1.3), labels = c("A","B","C"), ncol=1, align='v')
+p4        
+
+ggsave("../figures/All_Plant_Diversity.png", plot=last_plot(), device=NULL, path=NULL, scale=1,  width=7, height=15, dpi=300, limitsize=TRUE)
+```
+# Plant Biomass 2010 & 2017
+```{r}
+### Mike, please fill in glm code and feel free to update the graph to match
+
+biomass <- read.csv("../data/WRC_biomass.csv")
+
+# Graphing biomass
+ditch.labs <- c("wet_0ditch","dry_1ditch") #for facet labels
+names(ditch.labs) <- c("0", "1")
+
+p <- ggplot(biomass, aes(x=Year, y=totalbiomass, color=Treatment))+ scale_color_manual(name="Treatment", values=c("gray", "darkgreen"), labels = c("mowed/unfertilized", "mowed/fertilized")) + stat_summary(fun.data=mean_cl_boot,size=0.75) 
+p1=p+geom_smooth(method="lm")+facet_wrap(~Ditch)+facet_grid(. ~ Ditch,labeller = labeller(Ditch=ditch.labs))
+p1 + theme_bw() + 
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line 
+          =element_line(colour = "black")) + 
+    theme(axis.title=element_text(vjust=1,size=14,face="bold"),
+          axis.text=element_text(size=14), axis.text.x = element_text(vjust=0.65, hjust=0.5, 
+          size=14), panel.border = element_rect(colour = "black",size=1)) + 
+    theme(axis.ticks.length=unit(0.3,"cm")) + labs(x = "Year", y = "Plant Biomass (g)") + 
+    theme(strip.text.x = element_text(size=14, face="bold"), strip.text.y =   
+          element_text(size=14, face="bold"), strip.background = element_rect(colour="black",
+          fill="white", size=1)) +
+    scale_x_discrete(breaks=c("2010.yr", "2017.yr"), labels=c("2010", "2017"))
+  
+ggsave("../figures/plant_biomass.png", plot=last_plot(), device=NULL, path=NULL, scale=1, width=7, height=5, dpi=300, limitsize=TRUE)
+```
+
+
+
+
+
+
+
+
