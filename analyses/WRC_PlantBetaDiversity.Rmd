@@ -42,11 +42,16 @@ labels(PCC)
 treatments <- PCC$treatment
 levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
 PCC.trts <- cbind(treatments,PCC)
+
+PCC$Fertilizer <- factor(PCC$Fertilizer)
+PCC$Mowing <- factor(PCC$Mowing)
+PCC$Ditch <- factor (PCC$Ditch)
+str(PCC)
 ```
 
 # Simple Hypothesis Testing
 ```{r Hypothesis Testing PERMANOVA, echo=TRUE}
-#incorporating strata to restrict permutation within similar treatment
+#incorporated strata to restrict permutation within similar treatment
 PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray")
 
 #adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000, na.rm=TRUE)
@@ -59,6 +64,9 @@ PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray")
 
 adonis3 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year*Ditch+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
 adonis3
+
+adonis4 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+Ditch+(1|Ditch/BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
+adonis4
 ```
 # Test for multivariate homogeneity of group dispersions (variances)
 ```{r Group Dispersion - DITCH, echo=TRUE}
