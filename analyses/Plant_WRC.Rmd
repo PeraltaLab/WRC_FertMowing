@@ -1,6 +1,6 @@
 ---
 title: "Long-term Fertilization and Mowing at WRC:  Plant Community Characterization"
-author: "Ariane L. Peralta, Mario E. Muscarella, ...."
+author: "Ariane L. Peralta, Mario E. Muscarella"
 date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
   - \usepackage{array}
