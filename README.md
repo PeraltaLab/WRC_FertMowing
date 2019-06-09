@@ -1,34 +1,30 @@
-# Long-term fertilization and mowing experiment at West Research Campus, East Carolina University
+# WRC_FertMowing
+Long-term fertilization and mowing experiment at the West Research Campus, Greenville, NC, East Carolina University
 
 This repository contains open-source code, data, & text files for 
 
-For information regarding the project, please visit: 
+For information regarding the project, please visit: [update with publication information]
 
-1. 
+## We address the following questions
 
-## Project Goals
+* **Aim 1.)**: How does long-term fertilization and disturbance (by mowing) influence wetland plant diversity?
 
-* **Aim 1.)** 
-
-* **Aim 2.)** 
-
-* **Aim 3.)** 
+* **Aim 2.)**: How does long-term fertilization and disturbance (by mowing) influence wetland obligate plant species? 
 
 ### Repo Contents
 
-* **analyses:**
-	*An R script written by Ariane Peralta (East Carolina University), Mike McCoy (East Carolina University), Mario Muscarella (Indiana University) containing functions 
-* **bin:** 
-	*
-* **data:**
+* **analyses:**: An R Markdown file that includes R script written by Mike McCoy, Mario Muscarella, and Ariane Peralta containing functions used in analysis of plant species data.
 
-* **figures:**
+* **data:**: Files associated with soil and plant data sets. 
 
-
+* **figures:**: Figures (of plant community composition) generated according to R script located in R Markdown file.
 
 ## Contributors
-[Carol Goodwillie]( ): Principle Investigator, Associate Professor, Department of Biology, East Carolina University. Head of the [Peralta Lab]()
-[Ariane Peralta]( ): Co-Principle Investigator, Assistant Professor, Department of Biology, East Carolina University. Head of the [Peralta Lab]()
-[Mike McCoy]( ): Co-Principle Investigator, Assistant Professor, Department of Biology, East Carolina University. 
 
-[Mario Muscarella](http://mmuscarella.github.io/): former Ph.D. candidate in the [Lennon Lab](http://www.indiana.edu/~microbes/people.php) at Indiana University
+[Dr. Carol Goodwillie](https://www.goodwillielab.com/): Principal Investigator, Assistant Professor, Department of Biology, East Carolina University.
+
+[Dr. Mike McCoy](http://mikemccoylab.weebly.com/): Co-Principal Investigator, Assistant Professor, Department of Biology, East Carolina University. 
+
+[Dr. Ariane Peralta](http://www.peraltalab.com): Co-Principal Investigator, Assistant Professor, Department of Biology, East Carolina University. 
+
+[Dr. Mario Muscarella](http://mmuscarella.github.io/): Postdoc in the [O'Dwyer Lab](https://publish.illinois.edu/odwyerlab/) at the University of Illinois at Urbana-Champaign
