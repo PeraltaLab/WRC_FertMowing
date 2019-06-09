@@ -14,7 +14,7 @@ header-includes:
 
 Narrative for the analysis of data from a long-term ecological experiment conducted by Dr. Carol Goodwillie at ECU's West Research Campus. The experiment has monitored the change in plant communities over time. The experimental design is a 2x2 factorial experiment with 2 levels of disturbance (mowed or unmowed) and 2 levels of nutrient addition (fertilized and unfertilized). The experiment was arranged in 8 spatial blocks with each containing the 4 treatment plots. Three fixed quadrats were created within each plot that were sampled annually. The spatial blocks were arranged in two rows that differed in proximity to a ditch which is suspectected to have induced systematic differences in the hydrodynamics among the sets of blocks (see Figure 1). 
 
-![Figure1](~/GitHub/WRC_FertMowing/analyses/WRC_exptdesign.png)
+![Figure1](~/GitHub/WRC_FertMowing/analyses/WRC_ExptDesign.png)
 
 Before running statistical analyses, lets take a look at some plots of the data and makesure everything is making sense and to examine for patterns.
 
