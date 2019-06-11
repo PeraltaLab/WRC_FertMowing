@@ -1,5 +1,5 @@
 ---
-title: "Long-term fert and mowing at WRC"
+title: "Long-term Fertilization and Mowing at WRC:  Plant Alpha Diversity Analyses"
 author: "Michael W. McCoy, Ariane Peralta, and Carol Goodwillie"
 date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -12,7 +12,7 @@ header-includes:
 - \usepackage[utf8]{inputenc}
 ---
 
-Narrative for the analysis of data from a long-term ecological experiment conducted by Dr. Carol Goodwillie at ECU's West Research Campus. The experiment has monitored the change in plant communities over time. The experimental design is a 2x2 factorial experiment with 2 levels of disturbance (mowed or unmowed) and 2 levels of nutrient addition (fertilized and unfertilized). The experiment was arranged in 8 spatial blocks with each containing the 4 treatment plots. Three fixed quadrats were created within each plot that were sampled annually. The spatial blocks were arranged in two rows that differed in proximity to a ditch which is suspectected to have induced systematic differences in the hydrodynamics among the sets of blocks (see Figure 1). 
+Narrative for the analysis of data from a long-term ecological experiment conducted by Dr. Carol Goodwillie at ECU's West Research Campus. The experiment has monitored the change in plant communities over time. The experimental design is a 2x2 factorial experiment with 2 levels of disturbance (mowed or unmowed) and 2 levels of nutrient addition (fertilized and unfertilized). The experiment was arranged in 8 spatial blocks with each containing the 4 treatment plots. Three fixed quadrats were created within each plot that were sampled annually. The spatial blocks were arranged in two rows that differed in proximity to a ditch which is suspectected to have induced systematic differences in the hydrology among the sets of blocks (see Figure 1).Blocks near the ditch are drier than blocks far from the ditch, which are wetter. Here, analyses include all plant species in data set.
 
 ![Figure1](~/GitHub/WRC_FertMowing/analyses/WRC_ExptDesign.png)
 
@@ -53,10 +53,10 @@ The error distribution is a bit tricky for species richness becuase it is by def
 ```{r lognormal_richness}
 m1=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
               (1|Ditch/BLOCK/QUADRAT..), data=WRC_dat.2, family=gaussian(log))
-m1=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
-              (1|BLOCK/QUADRAT..), data=WRC_dat.2, family=gaussian(log))
+#m1=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
+              #(1|BLOCK/QUADRAT..), data=WRC_dat.2, family=gaussian(log))
 m2=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
-              (1|BLOCK/QUADRAT..), data=WRC_dat.2, family=poisson(log))
+              (1|Ditch/BLOCK/QUADRAT..), data=WRC_dat.2, family=poisson(log))
 ICtab(m1,m2,type="AICc")
 c(glance(m1)[3],glance(m2)[3])
 
@@ -137,7 +137,7 @@ d=Effect("Ditch",m1)
 dd=summary(d)
 ditcheff=data.frame(Ditch=c("wet (0ditch)", "dry (1dtich)"),est=c(dd$effect[1],dd$effect[2]),lwr=c(dd$lower[1], dd$lower[2]),upr=c(dd$upper[1], dd$upper[2]))
 
-p2=ggplot(ditcheff,aes(x=Ditch,y=est,ymin=lwr,ymax=upr,group=Ditch))+geom_segment(x=1,y=dd$effect[1],xend=2,yend=dd$effect[2],size=1)+geom_point(size=3)+theme_bw()+geom_linerange(size=.5)+theme_bw()+ylab("Species Richness")+
+p2=ggplot(ditcheff,aes(x=Ditch,y=est,ymin=lwr,ymax=upr,group=Ditch))+geom_segment(x=2,y=dd$effect[1],xend=1,yend=dd$effect[2],size=1)+geom_point(size=3)+theme_bw()+geom_linerange(size=.5)+theme_bw()+ylab("Species Richness")+
 theme(axis.text.x = element_text(size=18,colour = "black", hjust=0.5),
         axis.title.x = element_text(size=18,face="bold")) +
   theme(axis.text.y = element_text(size=18,colour = "black"),
@@ -177,6 +177,30 @@ ggsave("../figures/All_Plant_Diversity.png", plot=last_plot(), device=NULL, path
 
 biomass <- read.csv("../data/WRC_biomass.csv")
 
+head(biomass)
+biomass$Ditch=as.factor(biomass$Ditch)
+str(biomass)
+
+###getting error --> Error in eval(predvars, data, env) : object 'Quadrat..' not found
+b1=glmmTMB(totalbiomass~(Year*Treatment)+Ditch+
+              (1|Ditch/Block/Quadrat..), data=biomass, family=gaussian(log))
+b2=glmmTMB(totalbiomass~(Year*Treatment)+Ditch+
+              (1|Ditch/Block/Quadrat..), data=biomass, family=poisson(log))
+ICtab(b1,b2,type="AICc")
+c(glance(b1)[3],glance(b2)[3])
+
+```
+
+```{r}
+Anova(m1,type="II")
+
+alphae <- allEffects(m1)
+alphae
+plot(alphae)
+summary(m1)
+```
+
+```{r}
 # Graphing biomass
 ditch.labs <- c("wet_0ditch","dry_1ditch") #for facet labels
 names(ditch.labs) <- c("0", "1")

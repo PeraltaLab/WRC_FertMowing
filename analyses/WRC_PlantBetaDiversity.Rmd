@@ -1,5 +1,5 @@
 ---
-title: "Long-term Fertilization and Mowing at WRC:  Plant Community Characterization"
+title: "Long-term Fertilization and Mowing at WRC:  Plant Beta Diversity Analyses"
 author: "Ariane L. Peralta, Mario E. Muscarella"
 date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
@@ -11,6 +11,9 @@ output:
 ---
 
 Project Description: 
+Narrative for the analysis of data from a long-term ecological experiment conducted by Dr. Carol Goodwillie at ECU's West Research Campus. The experiment has monitored the change in plant communities over time. The experimental design is a 2x2 factorial experiment with 2 levels of disturbance (mowed or unmowed) and 2 levels of nutrient addition (fertilized and unfertilized). The experiment was arranged in 8 spatial blocks with each containing the 4 treatment plots. Three fixed quadrats were created within each plot that were sampled annually. The spatial blocks were arranged in two rows that differed in proximity to a ditch which is suspectected to have induced systematic differences in the hydrology among the sets of blocks (see Figure 1). Blocks near the ditch are drier than blocks far from the ditch, which are wetter.
+
+![Figure1](~/GitHub/WRC_FertMowing/analyses/WRC_ExptDesign.png)
 
 ## Initial Setup
 ```{r Initial Setup, include=FALSE}
@@ -54,15 +57,7 @@ str(PCC)
 #incorporated strata to restrict permutation within similar treatment
 PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray")
 
-#adonis = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), strata = PCC$treatment, method = "bray", data = PCC, perm=1000, na.rm=TRUE)
-#adonis
-
-#adonis2 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
-#adonis2
-
-#adonis1 and adonis2 result in the same output
-
-adonis3 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year*Ditch+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
+adonis3 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year*Ditch+(1|Ditch/BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
 adonis3
 
 adonis4 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+Ditch+(1|Ditch/BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
