@@ -1,7 +1,15 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Long-term Fertilization and Mowing at WRC:  Plant Alpha Diversity Analyses - Wetland Species Only"
+author: "Michael W. McCoy, Ariane Peralta, and Carol Goodwillie"
+date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document: default
+  fig_caption: yes
+  pdf_document: null
+header-includes:
 ---
+Narrative for the analysis of data from a long-term ecological experiment conducted by Dr. Carol Goodwillie at ECU's West Research Campus. The experiment has monitored the change in plant communities over time. The experimental design is a 2x2 factorial experiment with 2 levels of disturbance (mowed or unmowed) and 2 levels of nutrient addition (fertilized and unfertilized). The experiment was arranged in 8 spatial blocks with each containing the 4 treatment plots. Three fixed quadrats were created within each plot that were sampled annually. The spatial blocks were arranged in two rows that differed in proximity to a ditch which is suspectected to have induced systematic differences in the hydrology among the sets of blocks (see Figure 1).Blocks near the ditch are drier than blocks far from the ditch, which are wetter.
+
 Okay, so now lets test the wetland obligate plants seperately from the generalist and upland species.  If the ditch effect is only a drying affect we should see a significant ditch effect on the wetland plants but no significant effect on the upland plants.
 
 ## Initial Setup
@@ -71,15 +79,16 @@ squeeze=function(x){ (x*(length(x)-1)+0.5)/length(x)}
 squeeze_2=function(x,eps){ (x+eps)/(1+2*eps)}
 WRC_wetdat.2=WRC_wetdat.2 %>% mutate(meanimp_sq = squeeze(meanimp),meanimp_sq2=squeeze_2(meanimp,eps))
 ```
+
 ```{r}
-wp1=glmmTMB(meanimp_sq~(Year_sc * Mowing * Fertilizer) + Ditch + (1|BLOCK/QUADRAT..), data=WRC_wetdat.2,ziformula = ~1, family=beta_family(link = "logit"))
-wp2=glmmTMB(meanimp_sq~(Year_sc * Mowing * Fertilizer) + Ditch + (1|BLOCK/QUADRAT..), data=WRC_wetdat.2,ziformula = ~., family=beta_family(link = "logit"))
-wp3=glmmTMB(meanimp_sq~(Year_sc * Mowing * Fertilizer) + Ditch + (1|BLOCK/QUADRAT..), data=WRC_wetdat.2,ziformula = ~(Year_sc * Mowing * Fertilizer) + Ditch, family=beta_family(link = "logit"))
-wp4=glmmTMB(meanimp_sq~(Year_sc * Mowing * Fertilizer) + Ditch + (1|BLOCK/QUADRAT..), data=WRC_wetdat.2,ziformula = ~0, family=beta_family(link = "logit"))
+wp1=glmmTMB(meanimp_sq~(Year_sc * Mowing * Fertilizer) + Ditch + (1|Ditch/BLOCK/QUADRAT..), data=WRC_wetdat.2,ziformula = ~1, family=beta_family(link = "logit"))
+wp2=glmmTMB(meanimp_sq~(Year_sc * Mowing * Fertilizer) + Ditch + (1|Ditch/BLOCK/QUADRAT..), data=WRC_wetdat.2,ziformula = ~., family=beta_family(link = "logit"))
+wp3=glmmTMB(meanimp_sq~(Year_sc * Mowing * Fertilizer) + Ditch + (1|Ditch/BLOCK/QUADRAT..), data=WRC_wetdat.2,ziformula = ~(Year_sc * Mowing * Fertilizer) + Ditch, family=beta_family(link = "logit"))
+wp4=glmmTMB(meanimp_sq~(Year_sc * Mowing * Fertilizer) + Ditch + (1|Ditch/BLOCK/QUADRAT..), data=WRC_wetdat.2,ziformula = ~0, family=beta_family(link = "logit"))
 
 c(glance(wp1)[3],glance(wp2)[3],glance(wp3)[3],glance(wp4)[3])
-
 ```
+
 ```{r}
 library(car)
 Anova(wp4,type="III")
@@ -158,7 +167,7 @@ d=Effect("Ditch",wp4)
 dd=summary(d)
 ditcheff=data.frame(Ditch=c("wet (0ditch)", "dry (1ditch)"),est=c(dd$effect[1],dd$effect[2]),lwr=c(dd$lower[1], dd$lower[2]),upr=c(dd$upper[1], dd$upper[2]))
 
-p2=ggplot(ditcheff,aes(x=Ditch,y=est,ymin=lwr,ymax=upr,group=Ditch))+geom_segment(x=1,y=dd$effect[1],xend=2,yend=dd$effect[2],size=1)+geom_point(size=3)+theme_bw()+geom_linerange(size=.5)+theme_bw()+ylab("Importance Score")+
+p2=ggplot(ditcheff,aes(x=Ditch,y=est,ymin=lwr,ymax=upr,group=Ditch))+geom_segment(x=2,y=dd$effect[1],xend=1,yend=dd$effect[2],size=1)+geom_point(size=3)+theme_bw()+geom_linerange(size=.5)+theme_bw()+ylab("Importance Score")+
 theme(axis.text.x = element_text(size=18,colour = "black", hjust=0.5),
         axis.title.x = element_text(size=18,face="bold")) +
   theme(axis.text.y = element_text(size=18,colour = "black"),
