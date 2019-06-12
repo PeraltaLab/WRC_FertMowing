@@ -51,7 +51,7 @@ We will use generalized mixed models to analyse these data.  We will account for
 The error distribution is a bit tricky for species richness becuase it is by definition a "count" of the number of species and so should be poisson or negative binomially distributed.  However, unlike other count data generated via poisson process which can contain zeros, richness data typically do not include 0 and so are bound at values > 0.  Consequently, these data are often analysed using lognormal errors becuase this bounds the values to be positive.  I will fit the data using both approaches and determine which is a better using AIC.
 
 ```{r lognormal_richness}
-m1=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
+m1=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing*Ditch)+
               (1|Ditch/BLOCK/QUADRAT..), data=WRC_dat.2, family=gaussian(log))
 #m1=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
               #(1|BLOCK/QUADRAT..), data=WRC_dat.2, family=gaussian(log))
@@ -67,7 +67,11 @@ Anova(m1,type="II")
 
 alphae <- allEffects(m1)
 alphae
+dev.new()
+pdf("../figures/All_Plant_Diversity_separate.pdf")
 plot(alphae)
+graphics.off()
+
 summary(m1)
 ```
 

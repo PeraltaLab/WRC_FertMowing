@@ -54,14 +54,10 @@ str(PCC)
 
 # Simple Hypothesis Testing
 ```{r Hypothesis Testing PERMANOVA, echo=TRUE}
-#incorporated strata to restrict permutation within similar treatment
 PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray")
 
-adonis3 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year*Ditch+(1|Ditch/BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
-adonis3
-
-adonis4 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year+Ditch+(1|Ditch/BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
-adonis4
+adonis1 = adonis(PCC[,-c(1:9)] ~ Fertilizer*Mowing*Year*Ditch+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000)
+adonis1
 ```
 # Test for multivariate homogeneity of group dispersions (variances)
 ```{r Group Dispersion - DITCH, echo=TRUE}
