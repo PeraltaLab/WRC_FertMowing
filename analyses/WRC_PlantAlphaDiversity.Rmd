@@ -53,13 +53,10 @@ The error distribution is a bit tricky for species richness becuase it is by def
 ```{r lognormal_richness}
 m1=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing*Ditch)+
               (1|Ditch/BLOCK/QUADRAT..), data=WRC_dat.2, family=gaussian(log))
-#m1=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
-              #(1|BLOCK/QUADRAT..), data=WRC_dat.2, family=gaussian(log))
 m2=glmmTMB(alpha~(scale(Year)*Fertilizer*Mowing)+Ditch+
               (1|Ditch/BLOCK/QUADRAT..), data=WRC_dat.2, family=poisson(log))
 ICtab(m1,m2,type="AICc")
 c(glance(m1)[3],glance(m2)[3])
-
 ```
 
 ```{r}
@@ -133,7 +130,6 @@ p3=ggplot(data=WRC_dat.2,aes(x=Year,y=alpha,shape=Ditch, color=Ditch))+
         panel.grid.minor = element_blank(),
         panel.border = element_rect(size = 1))+ggtitle("Raw Data")
 p3
-
 ```
 
 ```{r}
@@ -154,16 +150,7 @@ p2
 ```
 # Combine graphs
 ```{r combine graphs, echo=FALSE}
-#library(gridExtra)
-#suppressWarnings(grid.arrange(p1,p2,p3))
-#ggsave("../figures/All_plants.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=300, limitsize=TRUE)
-#pdf("~/Desktop/All_plants.pdf")
-#suppressWarnings(p1)
-#suppressWarnings(p2)
-#suppressWarnings(p3)
-#dev.off()
-
-library("cowplot") #combining rain cloud plots
+library("cowplot")
 
 # align all plots vertically
 p3.l <-p3 + theme(legend.position="top", legend.box = "horizontal")
@@ -177,31 +164,26 @@ ggsave("../figures/All_Plant_Diversity.png", plot=last_plot(), device=NULL, path
 ```
 # Plant Biomass 2010 & 2017
 ```{r}
-### Mike, please fill in glm code and feel free to update the graph to match
-
 biomass <- read.csv("../data/WRC_biomass.csv")
 
 head(biomass)
 biomass$Ditch=as.factor(biomass$Ditch)
 str(biomass)
 
-###getting error --> Error in eval(predvars, data, env) : object 'Quadrat..' not found
-b1=glmmTMB(totalbiomass~(Year*Treatment)+Ditch+
-              (1|Ditch/Block/Quadrat..), data=biomass, family=gaussian(log))
-b2=glmmTMB(totalbiomass~(Year*Treatment)+Ditch+
-              (1|Ditch/Block/Quadrat..), data=biomass, family=poisson(log))
-ICtab(b1,b2,type="AICc")
-c(glance(b1)[3],glance(b2)[3])
-
+b1=glmmTMB(totalbiomass~Year*Treatment*Ditch+
+              (1|Ditch/Block/Quadrat), data=biomass, family=gaussian(log))
+library(DHARMa)
+res=simulateResiduals(b1)
+plot(res)
 ```
 
 ```{r}
-Anova(m1,type="II")
+Anova(b1,type="II")
 
-alphae <- allEffects(m1)
+alphae <- allEffects(b1)
 alphae
 plot(alphae)
-summary(m1)
+summary(b1)
 ```
 
 ```{r}
@@ -209,27 +191,44 @@ summary(m1)
 ditch.labs <- c("wet_0ditch","dry_1ditch") #for facet labels
 names(ditch.labs) <- c("0", "1")
 
-p <- ggplot(biomass, aes(x=Year, y=totalbiomass, color=Treatment))+ scale_color_manual(name="Treatment", values=c("gray", "darkgreen"), labels = c("mowed/unfertilized", "mowed/fertilized")) + stat_summary(fun.data=mean_cl_boot,size=0.75) 
-p1=p+geom_smooth(method="lm")+facet_wrap(~Ditch)+facet_grid(. ~ Ditch,labeller = labeller(Ditch=ditch.labs))
+#point graphs
+p <- ggplot(biomass, aes(x=Year, y=totalbiomass, color=Treatment)) + 
+      scale_color_manual(name="Treatment", values=c("gray", "darkgreen"), labels = c("mowed/unfertilized", "mowed/fertilized")) + 
+      stat_summary(fun.data=mean_cl_boot,size=0.75) 
+p1=p+geom_smooth(method="lm") + 
+      facet_wrap(~Ditch)+facet_grid(. ~ Ditch,labeller = labeller(Ditch=ditch.labs))
 p1 + theme_bw() + 
-    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line 
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line 
           =element_line(colour = "black")) + 
-    theme(axis.title=element_text(vjust=1,size=14,face="bold"),
+      theme(axis.title=element_text(vjust=1,size=14,face="bold"),
           axis.text=element_text(size=14), axis.text.x = element_text(vjust=0.65, hjust=0.5, 
           size=14), panel.border = element_rect(colour = "black",size=1)) + 
-    theme(axis.ticks.length=unit(0.3,"cm")) + labs(x = "Year", y = "Aboveground Biomass (g)") + 
-    theme(strip.text.x = element_text(size=14, face="bold"), strip.text.y =   
+      theme(axis.ticks.length=unit(0.3,"cm")) + labs(x = "Year", y = "Aboveground Biomass (g)") + 
+      theme(strip.text.x = element_text(size=14, face="bold"), strip.text.y =   
           element_text(size=14, face="bold"), strip.background = element_rect(colour="black",
           fill="white", size=1)) +
-    scale_x_discrete(breaks=c("2010.yr", "2017.yr"), labels=c("2010", "2017"))
+          scale_x_discrete(breaks=c("2010.yr", "2017.yr"), labels=c("2010", "2017"))
   
 ggsave("../figures/plant_biomass.png", plot=last_plot(), device=NULL, path=NULL, scale=1, width=7, height=5, dpi=300, limitsize=TRUE)
+
+#boxplot
+p <- ggplot(biomass, aes(x=Year, y=totalbiomass, color=as.factor(Treatment))) + geom_boxplot() +
+      geom_point(aes(color=factor(Treatment)), size=2, position = position_jitterdodge()) +   
+      scale_color_manual(name="Treatment", values=c("gray70", "darkgreen"), labels = c("mowed/unfertilized", 
+      "mowed/fertilized")) 
+p1=p+geom_smooth(method="lm")+facet_wrap(~Ditch) + 
+      facet_grid(. ~ Ditch,labeller = labeller(Ditch=ditch.labs))
+p1 + theme_bw() + 
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line 
+          =element_line(colour = "black")) + 
+      theme(axis.title=element_text(vjust=1,size=14,face="bold"),
+          axis.text=element_text(size=14), axis.text.x = element_text(vjust=0.65, hjust=0.5, 
+          size=14), panel.border = element_rect(colour = "black",size=1)) + 
+      theme(axis.ticks.length=unit(0.3,"cm")) + labs(x = "Year", y = "Aboveground Biomass (g)") + 
+      theme(strip.text.x = element_text(size=14, face="bold"), strip.text.y =   
+          element_text(size=14, face="bold"), strip.background = element_rect(colour="black",
+          fill="white", size=1)) +
+        scale_x_discrete(breaks=c("2010.yr", "2017.yr"), labels=c("2010", "2017"))
+  
+ggsave("../figures/plant_biomass_boxplot.png", plot=last_plot(), device=NULL, path=NULL, scale=1, width=7, height=5, dpi=300, limitsize=TRUE)
 ```
-
-
-
-
-
-
-
-
