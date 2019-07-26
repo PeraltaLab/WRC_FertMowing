@@ -36,7 +36,18 @@ library(ggplot2)
 require("png")
 require("grid")
 ```
+# Import Data
+```{r Import Data, include=FALSE}
+WRCsoil.2015 <- read.csv("../data/2015_WRC_Soil.csv", header=TRUE)
+str(WRCsoil.2015)
 
+by_treatment_ditch <- WRCsoil.2015 %>%
+  group_by(Fertilization, Mowing, Ditch) %>%
+  summarise_at(c("Moisture....", "Temp..degC.", "pH", "SoilC_.", "SoilN_.", "NH4_ugpergsoil", 
+                 "NO3_ugpergsoil"), funs(mean,sd), na.rm = TRUE)
+write.csv(t(by_treatment_ditch), file = "../data/soil_properties_trt_ditch.csv",row.names=TRUE)
+
+```
 # Import Data
 ```{r Import Data, include=FALSE}
 PCC <- read.csv("../data/WRC_Importance.csv", header=TRUE)
