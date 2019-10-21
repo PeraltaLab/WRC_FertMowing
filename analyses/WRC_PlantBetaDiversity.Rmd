@@ -49,6 +49,30 @@ write.csv(t(by_treatment_ditch), file = "../data/soil_properties_trt_ditch.csv",
 
 ```
 # Import Data
+For analysis, percent cover data is combined with stem counts to calculate an importance value
+```{r calc_importance,echo=FALSE, eval=FALSE}
+WRC <- read.csv("../data/Plant_WRC.csv")
+head(WRC)
+str(WRC)
+#WRC$SUM<-rowSums(WRC[,-1:-8])
+
+WRC_norm <- WRC
+for(i in 1:nrow(WRC)){
+  WRC_norm[i,9:89] <- WRC[i,9:89]/sum(WRC[i,9:89])
+}
+head(WRC_norm)
+str(WRC_norm)
+which(apply(WRC_norm[,9:89],1,sum,na.rm=T)==0)
+
+cover<-droplevels(subset(WRC_norm,DATA.TYPE=="p cover"))
+stem<-droplevels(subset(WRC_norm,DATA.TYPE!="p cover"))
+imp_values<-cover[,9:89]+stem[,9:89]
+WRC_dat<-data.frame(cover[,1:8],imp_values)
+head(WRC_dat)
+
+#write.csv(WRC_dat, file="WRC_Importance.csv")
+```
+
 ```{r Import Data, include=FALSE}
 PCC <- read.csv("../data/WRC_Importance.csv", header=TRUE)
 labels(PCC)
