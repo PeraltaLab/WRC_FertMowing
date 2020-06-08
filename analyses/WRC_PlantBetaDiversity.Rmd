@@ -1,13 +1,15 @@
 ---
-title: "Long-term Fertilization and Mowing at WRC:  Plant Beta Diversity Analyses"
+title: 'Long-term Fertilization and Mowing at WRC:  Plant Beta Diversity Analyses'
 author: "Ariane L. Peralta, Mario E. Muscarella"
 date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+  fig_caption: yes
+  pdf_document: null
 header-includes:
-  - \usepackage{array}
-  - \usepackage{graphics}
-output: 
-  pdf_document:
-  fig_caption: true
+- \usepackage{array}
+- \usepackage{graphics}
 ---
 
 Project Description: 
