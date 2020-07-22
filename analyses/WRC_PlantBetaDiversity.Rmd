@@ -216,15 +216,15 @@ year <- PCC$Year
 ditch <- as.factor(PCC$Ditch)
 levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
 points <- cbind(as.data.frame(WRC_pcoa$points), treatments, year, ditch)
-L.centroids <- melt(points, id=c("treatments", "year", "ditch"), measure.vars = c("V1", "V2", "V3"))
+L.centroids <- reshape2::melt(points, id=c("treatments", "year", "ditch"), measure.vars = c("V1", "V2", "V3"))
 centroids <- cast(L.centroids, ... ~ variable, mean)
 centroids <- cast(L.centroids, ... ~ variable, fun.aggregate=c(mean,se))
 
-pdf(file="../figures/Plant_PCoA.pdf", width = 8, height = 6, bg = "white")
+pdf(file="../figures/Plant_PCoA.pdf", width = 3, height = 6, bg = "white")
 #ggsave("../figures/Plant_Rplot.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=300, limitsize=TRUE)
 
 par(opar)
-layout(matrix(1:4, ncol = 2, byrow = T))
+layout(matrix(1:4, ncol = 1, byrow = T))
   
 par(mar=c(0.5,1,1,0.5), oma=c(5,5,1,1)+0.1)
 x.dim <- c((min(centroids$V1_mean)-(max(centroids$V1_mean)*0.15)) ,
@@ -278,31 +278,41 @@ abline(h=0, lty="dotted")
 abline(v=0, lty="dotted")
 box(lwd=2)
 trt.arrows(trt = "UM/UF", col.trt = "gray90")
-text(0.45, -0.35, "Unmowed\nUnfertilized", adj = 1)
+text(0.46, -0.35, "Unmowed\nUnfertilized", adj = 1)
+text(-0.36, 0.37, "A", adj = 1)
+
 
 plot(pcoap$V1, pcoap$V2, xlab="", 
     ylab="", 
     xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
     cex.lab=1.5, cex.axis=1.2)
 axis(side=1, labels = F, las=1, cex = 0.8)
-axis(side=2, labels = F, las=1, cex = 0.8)
+axis(side=2, labels = T, las=1, cex = 0.8)
+abline(h=0, lty="dotted")
+abline(v=0, lty="dotted")
+box(lwd=2)
+trt.arrows(trt = "UM/F", col.trt = "forestgreen")
+text(0.46, -0.35, "Unmowed\nFertilized", adj = 1)
+text(-0.36, 0.37, "B", adj = 1)
+
+plot(pcoap$V1, pcoap$V2, xlab="", 
+    ylab="", 
+    xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
+    cex.lab=1.5, cex.axis=1.2)
+axis(side=1, labels = F, las=1, cex = 0.8)
+axis(side=2, labels = T, las=1, cex = 0.8)
 abline(h=0, lty="dotted")
 abline(v=0, lty="dotted")
 box(lwd=2)
 trt.arrows(trt = "M/UF", col.trt = "gray90")
-text(0.45, -0.35, "Mowed\nUnfertilized", adj = 1)
-  
-
+text(0.46, -0.35, "Mowed\nUnfertilized", adj = 1)
+text(-0.36, 0.37, "C", adj = 1)
+ 
 legend("topright", c("+ Ditch Effect", "- Ditch Effect"), 
        bty = "n", pch = c(24, 21), 
-       col = "gray10", pt.bg = "gray90", pt.cex = 1.5)
+       col = "gray10", pt.bg = "gray90", pt.cex = 1.25)
 usr <- par("usr")
 clip(0.202, 0.45, 0.2, 0.5)
-legend("topright", c("+ Ditch Effect", "- Ditch Effect"), 
-       bty = "n", pch = c(24, 21), 
-       col = "gray10", pt.bg = "forestgreen", pt.cex = 1.5)
-do.call("clip", as.list(usr))
-
 
 plot(pcoap$V1, pcoap$V2, xlab="", 
     ylab="", 
@@ -313,21 +323,14 @@ axis(side=2, labels = T, las=1, cex = 0.8)
 abline(h=0, lty="dotted")
 abline(v=0, lty="dotted")
 box(lwd=2)
-trt.arrows(trt = "UM/F", col.trt = "forestgreen")
-text(0.45, -0.35, "Unmowed\nFertilized", adj = 1)
-       
-plot(pcoap$V1, pcoap$V2, xlab="", 
-    ylab="", 
-    xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
-    cex.lab=1.5, cex.axis=1.2)
-axis(side=1, labels = T, las=1, cex = 0.8)
-axis(side=2, labels = F, las=1, cex = 0.8)
-abline(h=0, lty="dotted")
-abline(v=0, lty="dotted")
-box(lwd=2)
 trt.arrows(trt = "M/F", col.trt = "forestgreen")
-text(0.45, -0.35, "Mowed\nFertilized", adj = 1)           
-        
+text(0.46, -0.35, "Mowed\nFertilized", adj = 1)           
+text(-0.36, 0.37, "D", adj = 1)
+
+legend("topright", c("+ Ditch Effect", "- Ditch Effect"), 
+       bty = "n", pch = c(24, 21), 
+       col = "gray10", pt.bg = "forestgreen", pt.cex = 1.25)
+do.call("clip", as.list(usr))
            
 mtext(paste("PCoA Axis 1 (",explainvar1, "%)", sep=""), side = 1, 
       line = 2.5, outer = T, cex = 1.25)
