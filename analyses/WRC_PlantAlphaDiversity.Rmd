@@ -160,7 +160,7 @@ plots <- align_plots(p1, p2, p3.l, align = 'v', axis = 'l')
 p4 <- plot_grid(plots[[1]],plots[[2]],plots[[3]], rel_heights = c(1.1,1,1.3), labels = c("A","B","C"), ncol=1, align='v')
 p4        
 
-ggsave("../figures/All_Plant_Diversity.png", plot=last_plot(), device=NULL, path=NULL, scale=1,  width=7, height=15, dpi=300, limitsize=TRUE)
+ggsave("../figures/All_Plant_Diversity.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1,  width=7, height=14, dpi=300, limitsize=TRUE)
 ```
 # Plant Biomass 2010 & 2017
 ```{r}
@@ -209,7 +209,7 @@ p1 + theme_bw() +
           fill="white", size=1)) +
           scale_x_discrete(breaks=c("2010.yr", "2017.yr"), labels=c("2010", "2017"))
   
-ggsave("../figures/plant_biomass.png", plot=last_plot(), device=NULL, path=NULL, scale=1, width=7, height=5, dpi=300, limitsize=TRUE)
+ggsave("../figures/plant_biomass.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=7, height=5, dpi=300, limitsize=TRUE)
 
 #boxplot
 p <- ggplot(biomass, aes(x=Year, y=totalbiomass, color=as.factor(Treatment))) + geom_boxplot() +
@@ -230,5 +230,5 @@ p1 + theme_bw() +
           fill="white", size=1)) +
         scale_x_discrete(breaks=c("2010.yr", "2017.yr"), labels=c("2010", "2017"))
   
-ggsave("../figures/plant_biomass_boxplot.png", plot=last_plot(), device=NULL, path=NULL, scale=1, width=7, height=5, dpi=300, limitsize=TRUE)
+ggsave("../figures/plant_biomass_boxplot.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=7, height=5, dpi=300, limitsize=TRUE)
 ```
