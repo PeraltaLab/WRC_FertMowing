@@ -3,7 +3,7 @@ Long-term fertilization and mowing experiment at the West Research Campus, Green
 
 This repository contains open-source code, data, & text files for 
 
-For information regarding the project, please visit: [update with publication information]
+For information regarding the project, please visit: Goodwillie, C., M. W. McCoy, and A. L. Peralta. 2020. Long-term nutrient enrichment, mowing, and ditch drainage interact in the dynamics of a wetland plant community. Ecosphere 11(10):e03252. https://doi.org/10.1002/ecs2.3252
 
 ## We address the following questions
 
