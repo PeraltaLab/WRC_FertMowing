@@ -1,0 +1,358 @@
+---
+title: 'Long-term Fertilization and Mowing at WRC - 2004 through 2021'
+author: "Ariane L. Peralta, Carol Goodwillie"
+date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+  fig_caption: yes
+  pdf_document: null
+header-includes:
+- \usepackage{array}
+- \usepackage{graphics}
+---
+
+Project Description: 
+Narrative for the analysis of data from a long-term ecological experiment conducted by Dr. Carol Goodwillie at ECU's West Research Campus. The experiment has monitored the change in plant communities over time. The experimental design is a 2x2 factorial experiment with 2 levels of disturbance (mowed or unmowed) and 2 levels of nutrient addition (fertilized and unfertilized). The experiment was arranged in 8 spatial blocks with each containing the 4 treatment plots. Three fixed quadrats were created within each plot that were sampled annually. The spatial blocks were arranged in two rows that differed in proximity to a ditch which is suspectected to have induced systematic differences in the hydrology among the sets of blocks (see Figure 1). Blocks near the ditch are drier than blocks far from the ditch, which are wetter.
+
+![Figure1](~/GitHub/WRC_FertMowing/analyses/WRC_ExptDesign.png)
+
+## Initial Setup
+```{r Initial Setup, include=FALSE}
+rm(list=ls())
+setwd("~/GitHub/WRC_FertMowing/analyses")
+opar <- par(no.readonly = TRUE)  # Saves plot defaults
+
+# Add Summary Functions
+se <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+ci <- function(x, ...){1.96 * sd(x,na.rm = TRUE)}
+
+# Code Dependencies
+library(MASS)
+library(nlme)
+library(reshape2)
+library(vegan)
+library(reshape)
+library(lme4)
+library(ggplot2)
+require("png")
+require("grid")
+install.packages("devtools")
+require("devtools")
+```
+# Import Soil Data
+```{r Import Data, include=FALSE}
+#need to update
+WRCsoil.2015 <- read.csv("../data/2015_WRC_Soil.csv", header=TRUE)
+str(WRCsoil.2015)
+
+by_treatment_ditch <- WRCsoil.2015 %>%
+  group_by(Fertilization, Mowing, Ditch) %>%
+  summarise_at(c("Moisture....", "Temp..degC.", "pH", "SoilC_.", "SoilN_.", "NH4_ugpergsoil", 
+                 "NO3_ugpergsoil"), funs(mean,sd), na.rm = TRUE)
+write.csv(t(by_treatment_ditch), file = "../data/soil_properties_trt_ditch.csv",row.names=TRUE)
+
+```
+# Import Plant Data
+For analysis, percent cover data is combined with stem counts to calculate an importance value
+```{r calc_importance,echo=FALSE, eval=FALSE}
+WRC <- read.csv("../data/Plant_WRC_2004to2021.csv")
+head(WRC)
+str(WRC)
+SUM<-rowSums(WRC[,-1:-8])
+dim(WRC) #plant species data 9:96
+
+WRC_norm <- WRC
+for(i in 1:nrow(WRC)){
+  WRC_norm[i,9:96] <- WRC[i,9:96]/sum(WRC[i,9:96])
+}
+head(WRC_norm)
+str(WRC_norm)
+which(apply(WRC_norm[,9:96],1,sum,na.rm=T)==0)
+
+cover<-droplevels(subset(WRC_norm,DATA.TYPE=="p cover"))
+stem<-droplevels(subset(WRC_norm,DATA.TYPE!="p cover"))
+imp_values<-cover[,9:96]+stem[,9:96]
+WRC_dat<-data.frame(cover[,1:8],imp_values)
+head(WRC_dat)
+
+write.csv(WRC_dat, file="../data/WRC_Importance_2004to2021.csv")
+```
+
+```{r Import Data, include=FALSE}
+PCC <- read.csv("../data/WRC_Importance_2004to2021.csv", header=TRUE)
+dim(PCC) #[1] 1440:97
+
+PCC <- na.omit(PCC) #drop NA 
+dim(PCC) #now #[1] 1439:97
+labels(PCC) 
+
+treatments <- PCC$treatment
+levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
+PCC.trts <- cbind(treatments,PCC)
+
+PCC$Fertilizer <- factor(PCC$Fertilizer)
+PCC$Mowing <- factor(PCC$Mowing)
+PCC$Ditch <- factor(PCC$Ditch)
+PCC$treatment <- factor(PCC$treatment)
+str(PCC)
+```
+
+# Simple Hypothesis Testing
+```{r Hypothesis Testing PERMANOVA, echo=TRUE}
+PCC.dist <- vegdist(PCC[,-c(1:9)], method="bray")
+
+adonis1 = adonis(PCC[,c(10:97)] ~ Fertilizer*Mowing*Year*Ditch+(1|BLOCK/QUADRAT..), method = "bray", data = PCC, perm=1000, set.seed=42)
+adonis1
+
+adonis1
+```
+# Test for multivariate homogeneity of group dispersions (variances)
+```{r Group Dispersion - DITCH, echo=TRUE}
+## Bray-Curtis distances between samples NEAR DITCH
+PCC.ditch <-subset(PCC, Ditch ==1)
+PCC.dist.ditch <- vegdist(PCC.ditch[,-c(1:9)], method="bray")
+
+## Calculate multivariate dispersions
+mod <- betadisper(PCC.dist.ditch, PCC.ditch$treatment)
+mod
+
+## Perform test
+anova(mod)
+
+## Permutation test for F
+permutest(mod, pairwise = TRUE)
+
+## Tukey's Honest Significant Differences
+(mod.HSD <- TukeyHSD(mod))
+plot(mod.HSD)
+
+#need to save plot
+```
+# Indicator Species Analysis
+```{r Indicator Spp Analysis - DITCH, echo=TRUE}
+#plant.ind - treatment-YES ditch
+library("labdsv")
+design.type <- PCC.ditch$treatment
+
+PCC.ditch.rel <- PCC.ditch[,-c(1:9)]
+dataREL <- PCC.ditch.rel[, colSums(PCC.ditch.rel) > 0.05]
+plant.ind <- indval(dataREL, design.type)
+levels(design.type)
+summary(plant.ind)
+
+inds <- which(plant.ind$pval <= 0.05)
+plant.indicators <- as.data.frame(matrix(NA, nrow = length(inds), ncol = 4))
+colnames(plant.indicators) <- c("Species", "Cluster", "IndVal", "Prob")
+
+plant.indicators$Species <- names(inds)
+plant.indicators$Cluster <- plant.ind$maxcls[inds]
+plant.indicators$IndVal <- plant.ind$indcls[inds]
+plant.indicators$Prob <- plant.ind$pval[inds]
+
+indicator.plant <- cbind(plant.indicators)
+
+levels(design.type) #[1] "C"  "F"  "M"  "MF"
+
+# Export Plant Spp Indicator Table
+write.table(indicator.plant, "../data/PlantIndicators_2004to2021_Ditch.txt",
+            sep="\t", row.names = F, quote = F)
+```
+# Test for multivariate homogeneity of group dispersions (variances)
+```{r Group Dispersion - NO DITCH, echo=TRUE}
+
+## Bray-Curtis distances between samples FAR/NO DITCH
+PCC.NOditch <-subset(PCC, Ditch ==0)
+PCC.dist.NOditch <- vegdist(PCC.NOditch[,-c(1:9)], method="bray")
+
+## Calculate multivariate dispersions
+mod <- betadisper(PCC.dist.NOditch, PCC.NOditch$treatment)
+mod
+
+## Perform test
+anova(mod)
+
+## Permutation test for F
+permutest(mod, pairwise = TRUE)
+
+## Tukey's Honest Significant Differences
+(mod.HSD <- TukeyHSD(mod))
+plot(mod.HSD)
+##need to save plot
+```
+# Indicator Species Analysis
+```{r Indicator Spp Analysis - NO DITCH, echo=TRUE}
+#plant.ind - treatment-NO ditch
+library("labdsv")
+PCC.NOditch$treatment <- as.factor(PCC.NOditch$treatment)
+design.type <- PCC.NOditch$treatment
+
+PCC.NOditch.rel <- PCC.NOditch[,-c(1:9)]
+dataREL <- PCC.NOditch.rel[, colSums(PCC.NOditch.rel) > 0.05]
+plant.ind <- indval(dataREL, design.type)
+levels(design.type) #[1] "C"  "F"  "M"  "MF"
+summary(plant.ind)
+
+inds <- which(plant.ind$pval <= 0.05)
+plant.indicators <- as.data.frame(matrix(NA, nrow = length(inds), ncol = 4))
+colnames(plant.indicators) <- c("Species", "Cluster", "IndVal", "Prob")
+
+plant.indicators$Species <- names(inds)
+plant.indicators$Cluster <- plant.ind$maxcls[inds]
+plant.indicators$IndVal <- plant.ind$indcls[inds]
+plant.indicators$Prob <- plant.ind$pval[inds]
+
+indicator.plant <- cbind(plant.indicators)
+
+levels(design.type) #[1] "C"  "F"  "M"  "MF"
+
+# Export Plant Spp Indicator Table
+write.table(indicator.plant, "../data/PlantIndicators_2014to2021_NOditch.txt",
+            sep="\t", row.names = F, quote = F)
+```
+# Plot Plant Community Composition
+```{r Ordination - Plant, echo=TRUE}
+sampleREL.dist <- vegdist(PCC[,-c(1:9)], method="bray")
+WRC_pcoa <- cmdscale(sampleREL.dist,k=3,eig=TRUE,add=FALSE)
+explainvar1 <- round(WRC_pcoa$eig[1]/sum(WRC_pcoa$eig)*100,1)
+explainvar2 <- round(WRC_pcoa$eig[2]/sum(WRC_pcoa$eig)*100,1)
+explainvar3 <- round(WRC_pcoa$eig[3]/sum(WRC_pcoa$eig)*100,1)
+explainvar1
+explainvar2
+explainvar3
+pcoap <- merge(as.data.frame(WRC_pcoa$points),PCC$treatment, by=0,all.x=T)
+rownames(pcoap) <- rownames(WRC_pcoa$points)
+pcoap <- merge(pcoap[,-1],PCC$Year, by=0,all.x=T)
+rownames(pcoap) <- rownames(WRC_pcoa$points)
+treatments <- PCC$treatment
+year <- PCC$Year
+ditch <- as.factor(PCC$Ditch)
+levels(treatments) <- c("UM/UF", "UM/F", "M/UF", "M/F")
+points <- cbind(as.data.frame(WRC_pcoa$points), treatments, year, ditch)
+L.centroids <- reshape2::melt(points, id=c("treatments", "year", "ditch"), measure.vars = c("V1", "V2", "V3"))
+centroids <- cast(L.centroids, ... ~ variable, mean)
+centroids <- cast(L.centroids, ... ~ variable, fun.aggregate=c(mean,se))
+
+pdf(file="../figures/Plant_2014to2021_PCoA.pdf", width = 3, height = 6, bg = "white")
+ggsave("../figures/Plant_2014to2021_Rplot.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=300, limitsize=TRUE)
+
+par(opar)
+layout(matrix(1:4, ncol = 1, byrow = T))
+  
+par(mar=c(0.5,1,1,0.5), oma=c(5,5,1,1)+0.1)
+x.dim <- c((min(centroids$V1_mean)-(max(centroids$V1_mean)*0.15)) ,
+           (max(centroids$V1_mean)+(max(centroids$V1_mean)*0.15)))
+
+y.dim <- c((min(centroids$V2_mean)-(max(centroids$V2_mean*0.15)+0.05)),   
+           (max(centroids$V2_mean)+(max(centroids$V2_mean)*0.15)+0.1))
+
+trt.arrows <- function(trt = "", col.trt = ""){
+  trt.yr <- centroids[which(centroids$treatments == trt), ]$year
+  cex.yr <- 1.2 + (as.numeric(trt.yr) - 2000) * 0.1
+  arrows(centroids[which(centroids$treatments == trt), ]$V1_mean, 
+         y1 = centroids[which(centroids$treatments == trt), ]$V2_mean - 
+              centroids[which(centroids$treatments == trt), ]$V2_se, 
+         y0 = centroids[which(centroids$treatments == trt), ]$V2_mean + 
+              centroids[which(centroids$treatments == trt), ]$V2_se,
+         angle = 90,length=0.025, lwd = 2, code = 3)
+  arrows(centroids[which(centroids$treatments == trt), ]$V2_mean, 
+         x1 = centroids[which(centroids$treatments == trt), ]$V1_mean - 
+              centroids[which(centroids$treatments == trt), ]$V1_se, 
+         x0 = centroids[which(centroids$treatments == trt), ]$V1_mean + 
+              centroids[which(centroids$treatments == trt), ]$V1_se,
+         angle = 90, length=0.025, lwd = 2, code = 3)
+  trt.pch <- as.character(centroids[which(centroids$treatments == trt), ]$ditch)
+  trt.pch[which(trt.pch == 0)] <-  21; trt.pch[which(trt.pch == 1)] <-  24
+  trt.pch <- as.numeric(trt.pch)
+  points(centroids[which(centroids$treatments == trt), ]$V1_mean, 
+         centroids[which(centroids$treatments == trt), ]$V2_mean, 
+         pch=trt.pch, cex=cex.yr, col="gray10", bg=col.trt)
+  pos.yr <- as.character(centroids[which(centroids$treatments == trt), ]$ditch)
+  pos.yr[which(pos.yr == 0)] <-  3; pos.yr[which(pos.yr == 1)] <-  1
+  pos.yr <- as.numeric(pos.yr)
+  offset.yr <- pos.yr
+  offset.yr[which(offset.yr == 1)] <-  -1; offset.yr[which(offset.yr == 3)] <-  1
+  text(centroids[which(centroids$treatments == trt), ]$V1_mean + 
+       (centroids[which(centroids$treatments == trt), ]$V1_se * offset.yr), 
+       centroids[which(centroids$treatments == trt), ]$V2_mean + 
+       (centroids[which(centroids$treatments == trt), ]$V2_se * offset.yr), 
+       labels=centroids[which(centroids$treatments == trt), ]$year, 
+       pos=pos.yr, cex = 0.6, srt = 45, offset = 0.5) 
+}
+
+  
+plot(pcoap$V1, pcoap$V2, xlab="", 
+     ylab="", 
+     xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
+     cex.lab=1.5, cex.axis=1.2) 
+axis(side=1, labels = F, las=1, cex = 0.8)
+axis(side=2, labels = T, las=1, cex = 0.8)
+abline(h=0, lty="dotted")
+abline(v=0, lty="dotted")
+box(lwd=2)
+trt.arrows(trt = "UM/UF", col.trt = "gray90")
+text(0.46, -0.35, "Unmowed\nUnfertilized", adj = 1)
+text(-0.36, 0.37, "A", adj = 1)
+
+
+plot(pcoap$V1, pcoap$V2, xlab="", 
+    ylab="", 
+    xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
+    cex.lab=1.5, cex.axis=1.2)
+axis(side=1, labels = F, las=1, cex = 0.8)
+axis(side=2, labels = T, las=1, cex = 0.8)
+abline(h=0, lty="dotted")
+abline(v=0, lty="dotted")
+box(lwd=2)
+trt.arrows(trt = "UM/F", col.trt = "forestgreen")
+text(0.46, -0.35, "Unmowed\nFertilized", adj = 1)
+text(-0.36, 0.37, "B", adj = 1)
+
+plot(pcoap$V1, pcoap$V2, xlab="", 
+    ylab="", 
+    xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
+    cex.lab=1.5, cex.axis=1.2)
+axis(side=1, labels = F, las=1, cex = 0.8)
+axis(side=2, labels = T, las=1, cex = 0.8)
+abline(h=0, lty="dotted")
+abline(v=0, lty="dotted")
+box(lwd=2)
+trt.arrows(trt = "M/UF", col.trt = "gray90")
+text(0.46, -0.35, "Mowed\nUnfertilized", adj = 1)
+text(-0.36, 0.37, "C", adj = 1)
+ 
+legend("topright", c("+ Ditch Effect", "- Ditch Effect"), 
+       bty = "n", pch = c(24, 21), 
+       col = "gray10", pt.bg = "gray90", pt.cex = 1.25)
+usr <- par("usr")
+clip(0.202, 0.45, 0.2, 0.5)
+
+plot(pcoap$V1, pcoap$V2, xlab="", 
+    ylab="", 
+    xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
+    cex.lab=1.5, cex.axis=1.2)
+axis(side=1, labels = T, las=1, cex = 0.8)
+axis(side=2, labels = T, las=1, cex = 0.8)
+abline(h=0, lty="dotted")
+abline(v=0, lty="dotted")
+box(lwd=2)
+trt.arrows(trt = "M/F", col.trt = "forestgreen")
+text(0.46, -0.35, "Mowed\nFertilized", adj = 1)           
+text(-0.36, 0.37, "D", adj = 1)
+
+legend("topright", c("+ Ditch Effect", "- Ditch Effect"), 
+       bty = "n", pch = c(24, 21), 
+       col = "gray10", pt.bg = "forestgreen", pt.cex = 1.25)
+do.call("clip", as.list(usr))
+           
+mtext(paste("PCoA Axis 1 (",explainvar1, "%)", sep=""), side = 1, 
+      line = 2.5, outer = T, cex = 1.25)
+      
+mtext(paste("PCoA Axis 2 (",explainvar2, "%)", sep=""), side = 2, 
+      line = 2.5, outer = T, cex = 1.25)
+
+dev.off() # this writes plot to folder
+graphics.off() # shuts down open devices
+
+
+```
