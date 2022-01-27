@@ -18,7 +18,7 @@ Narrative for the analysis of data from a long-term ecological experiment conduc
 ![Figure1](~/GitHub/WRC_FertMowing/analyses/WRC_ExptDesign.png)
 
 ## Initial Setup
-```{r Initial Setup, include=FALSE}
+```{r Initial Setup, include=TRUE}
 rm(list=ls())
 setwd("~/GitHub/WRC_FertMowing/analyses")
 opar <- par(no.readonly = TRUE)  # Saves plot defaults
@@ -28,28 +28,29 @@ se <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
 ci <- function(x, ...){1.96 * sd(x,na.rm = TRUE)}
 
 # Code Dependencies
-library(MASS)
-library(nlme)
-library(reshape2)
-library(vegan)
-library(reshape)
-library(lme4)
-library(ggplot2)
+library("MASS")
+library("nlme")
+library("reshape2")
+library("vegan")
+library("reshape")
+library("lme4")
+library("ggplot2")
 require("png")
 require("grid")
-install.packages("devtools")
 require("devtools")
+require("tidyverse")
 ```
 # Import Soil Data
-```{r Import Data, include=FALSE}
+```{r Import Soil Data, include=FALSE}
 #need to update
 WRCsoil.2015 <- read.csv("../data/2015_WRC_Soil.csv", header=TRUE)
 str(WRCsoil.2015)
 
 by_treatment_ditch <- WRCsoil.2015 %>%
   group_by(Fertilization, Mowing, Ditch) %>%
-  summarise_at(c("Moisture....", "Temp..degC.", "pH", "SoilC_.", "SoilN_.", "NH4_ugpergsoil", 
-                 "NO3_ugpergsoil"), funs(mean,sd), na.rm = TRUE)
+  summarise_at(c("Moisture....", "Temp..degC.", "pH", "SoilC_.", 
+                 "SoilN_.", "NH4_ugpergsoil", "NO3_ugpergsoil"), 
+               funs(mean,sd), na.rm = TRUE)
 write.csv(t(by_treatment_ditch), file = "../data/soil_properties_trt_ditch.csv",row.names=TRUE)
 
 ```
@@ -79,7 +80,7 @@ head(WRC_dat)
 write.csv(WRC_dat, file="../data/WRC_Importance_2004to2021.csv")
 ```
 
-```{r Import Data, include=FALSE}
+```{r Import Data, include=TRUE}
 PCC <- read.csv("../data/WRC_Importance_2004to2021.csv", header=TRUE)
 dim(PCC) #[1] 1440:97
 
@@ -210,9 +211,10 @@ levels(design.type) #[1] "C"  "F"  "M"  "MF"
 write.table(indicator.plant, "../data/PlantIndicators_2014to2021_NOditch.txt",
             sep="\t", row.names = F, quote = F)
 ```
+
 # Plot Plant Community Composition
 ```{r Ordination - Plant, echo=TRUE}
-sampleREL.dist <- vegdist(PCC[,-c(1:9)], method="bray")
+sampleREL.dist <- vegdist(as.matrix(PCC[,-c(1:9)]), method="bray")
 WRC_pcoa <- cmdscale(sampleREL.dist,k=3,eig=TRUE,add=FALSE)
 explainvar1 <- round(WRC_pcoa$eig[1]/sum(WRC_pcoa$eig)*100,1)
 explainvar2 <- round(WRC_pcoa$eig[2]/sum(WRC_pcoa$eig)*100,1)
@@ -233,8 +235,7 @@ L.centroids <- reshape2::melt(points, id=c("treatments", "year", "ditch"), measu
 centroids <- cast(L.centroids, ... ~ variable, mean)
 centroids <- cast(L.centroids, ... ~ variable, fun.aggregate=c(mean,se))
 
-pdf(file="../figures/Plant_2014to2021_PCoA.pdf", width = 3, height = 6, bg = "white")
-ggsave("../figures/Plant_2014to2021_Rplot.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=300, limitsize=TRUE)
+# pdf(file="../figures/Plant_2014to2021_PCoA.pdf", width = 3, height = 6, bg = "white")
 
 par(opar)
 layout(matrix(1:4, ncol = 1, byrow = T))
@@ -281,9 +282,9 @@ trt.arrows <- function(trt = "", col.trt = ""){
 }
 
   
-plot(pcoap$V1, pcoap$V2, xlab="", 
-     ylab="", 
-     xlim=x.dim, ylim=y.dim, pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
+plot(pcoap$V1[1:10], pcoap$V2[1:10], 
+     xlab="", ylab="", xlim=x.dim, ylim=y.dim, 
+     pch=16, cex=2.0, type="n",xaxt="n",yaxt="n", 
      cex.lab=1.5, cex.axis=1.2) 
 axis(side=1, labels = F, las=1, cex = 0.8)
 axis(side=2, labels = T, las=1, cex = 0.8)
@@ -351,8 +352,10 @@ mtext(paste("PCoA Axis 1 (",explainvar1, "%)", sep=""), side = 1,
 mtext(paste("PCoA Axis 2 (",explainvar2, "%)", sep=""), side = 2, 
       line = 2.5, outer = T, cex = 1.25)
 
-dev.off() # this writes plot to folder
-graphics.off() # shuts down open devices
+#dev.off() # this writes plot to folder
+#graphics.off() # shuts down open devices
+
+ggsave("../figures/Plant_2014to2021_Rplot.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=300, limitsize=TRUE)
 
 
 ```
